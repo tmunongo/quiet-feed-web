@@ -1,0 +1,127 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces';
+@import '@fontsource/source-serif-4';
+@import '@fontsource/source-serif-4/400-italic.css';
+@import '@fontsource/jetbrains-mono';
+
+/*
+	Design system notes (see also DESIGN.md)
+	-----------------------------------------
+	Quiet Feed's signature is "the seal" — a postmark-style stamp that marks
+	an edition as sealed/closed, echoing airmail envelope stripes rather than
+	a newspaper masthead. Three deliberately distinct type roles: Fraunces
+	(display, wonky/characterful, used sparingly), Source Serif 4 (reading
+	body), JetBrains Mono (dateline/metadata — the "stamped" utility voice).
+	Palette is a cool archival-paper grey, not the cream/terracotta combo
+	that's become the default "AI editorial" look.
+*/
+
+@theme {
+	--font-display: 'Fraunces Variable', 'Source Serif 4', serif;
+	--font-body: 'Source Serif 4', Georgia, serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+	/* Light mode — archival ledger paper, not cream */
+	--color-paper: #e6e3da;
+	--color-paper-dim: #d9d6cb;
+	--color-paper-raised: #efece3;
+	--color-ink: #20242c;
+	--color-ink-soft: #565b66;
+	--color-ink-faint: #8b8f96;
+
+	/* Postal accents — airmail-stripe red & blue, deliberately not crimson/terracotta */
+	--color-stamp: #a8392c;
+	--color-stamp-soft: #c97b6c;
+	--color-airmail: #2a4a6b;
+	--color-airmail-soft: #6f8aa6;
+
+	--color-line: #c7c3b6;
+}
+
+@layer base {
+	:root {
+		color-scheme: light;
+	}
+
+	html.dark {
+		color-scheme: dark;
+	}
+
+	html.dark {
+		--color-paper: #16181d;
+		--color-paper-dim: #1e2127;
+		--color-paper-raised: #20232a;
+		--color-ink: #e8e6df;
+		--color-ink-soft: #a3a7af;
+		--color-ink-faint: #6b6f77;
+
+		--color-stamp: #d97a68;
+		--color-stamp-soft: #b35c4d;
+		--color-airmail: #7fa3c9;
+		--color-airmail-soft: #4e6f91;
+
+		--color-line: #34373e;
+	}
+
+	* {
+		border-color: var(--color-line);
+	}
+
+	body {
+		background-color: var(--color-paper);
+		color: var(--color-ink);
+		font-family: var(--font-body);
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+
+	::selection {
+		background-color: var(--color-stamp-soft);
+		color: var(--color-paper);
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-airmail);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+}
+
+@layer utilities {
+	.font-display {
+		font-family: var(--font-display);
+		font-optical-sizing: auto;
+	}
+
+	.font-mono-tight {
+		font-family: var(--font-mono);
+		letter-spacing: 0.02em;
+	}
+
+	.text-dateline {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-ink-faint);
+	}
+
+	.rule {
+		border-top: 1px solid var(--color-line);
+	}
+
+	/* The signature stamp gets a faint hand-pressed irregularity rather than
+	   a perfectly crisp digital circle. */
+	.stamp-tilt {
+		transform: rotate(-4deg);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		* {
+			animation-duration: 0.001ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.001ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}

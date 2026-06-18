@@ -1,0 +1,36 @@
+services:
+  quiet-feed:
+    build: .
+    container_name: quiet-feed
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      # Update these two to your real domain before going live.
+      ORIGIN: https://quiet-feed.example.com
+      BETTER_AUTH_URL: https://quiet-feed.example.com
+      XFF_DEPTH: 1
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      CRON_SECRET: ${CRON_SECRET}
+      ENABLE_INTERNAL_SCHEDULER: "true"
+      SECURE_COOKIES: "true"
+      DATABASE_PATH: /app/data/quiet-feed.db
+    volumes:
+      - quiet-feed-data:/app/data
+    # Remove this if you're not fronting with Traefik — then publish the
+    # port directly instead, e.g. `ports: ["3000:3000"]`.
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.quiet-feed.rule=Host(`quiet-feed.example.com`)
+      - traefik.http.routers.quiet-feed.entrypoints=websecure
+      - traefik.http.routers.quiet-feed.tls.certresolver=letsencrypt
+      - traefik.http.services.quiet-feed.loadbalancer.server.port=3000
+    networks:
+      - traefik
+
+volumes:
+  quiet-feed-data:
+
+networks:
+  traefik:
+    external: true
