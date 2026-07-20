@@ -116,7 +116,7 @@
 			<span>
 				<span class="block text-sm" style="color: var(--color-ink);">Habits mode</span>
 				<span class="block text-xs" style="color: var(--color-ink-faint);">
-					Hides the "fetch now" button everywhere. You wait for the edition — that's the point.
+					Hides the "fetch now" button everywhere. Just wait for the edition.
 				</span>
 			</span>
 		</label>

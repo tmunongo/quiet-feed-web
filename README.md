@@ -145,16 +145,3 @@ src/routes/
 
 See `DESIGN.md` for the visual design rationale.
 
-## A known limitation in this delivery
-
-This project was built and validated in a sandboxed environment without network access to
-bun.sh or GitHub release assets, so Bun itself couldn't be installed there to run an actual
-`bun run build`/`bun run dev` end-to-end. Everything was validated as thoroughly as possible
-without it: `bun install`'s dependency resolution was checked via `npm install`, all
-TypeScript/Svelte code was type-checked with `svelte-check` (0 errors), the Vite/Rollup
-build pipeline was run all the way up to the one `bun:sqlite` import that only Bun's own
-resolver can handle, and the Drizzle schema was used to generate real migration SQL. The
-`bun:sqlite` resolution itself is a well-documented Bun/Vite interaction (not a guess) —
-see the `--bun` flag note above — but it's the one piece that could only be confirmed
-against documentation rather than an actual local build. Worth running `bun run build`
-yourself early after pulling this down, before building much further on top of it.
