@@ -66,23 +66,72 @@ for a real deployment:
   external cron job at `/api/cron/compile` instead (see below).
 - `SECURE_COOKIES` — set to `true` once served over HTTPS.
 
-### Docker / homelab deployment
+### Self-Hosting with Docker Compose (Pre-built Image)
 
-A `Dockerfile` and `docker-compose.yml` are included, written for a Traefik-fronted setup
-(matching a typical self-hosted reverse-proxy layout). Edit the domain in both the
-`ORIGIN`/`BETTER_AUTH_URL` environment values and the Traefik labels, then:
+You can run Quiet Feed using the pre-built Docker image hosted on the GitHub Container Registry (GHCR).
 
-```bash
-export BETTER_AUTH_SECRET=$(openssl rand -hex 32)
-export CRON_SECRET=$(openssl rand -hex 32)
-docker compose up -d --build
+Here is a template `compose.yml` for self-hosting. It mounts a volume for database persistence, starts the SvelteKit app on port 3000, and enables the internal scheduler for processing feeds.
+
+Create a `compose.yml` file:
+
+```yaml
+services:
+  quiet-feed:
+    image: ghcr.io/tmunongo/quiet-feed-web:latest # Replace with your package image path
+    container_name: quiet-feed
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      # Change these to your actual domain
+      ORIGIN: https://quiet-feed.example.com
+      BETTER_AUTH_URL: https://quiet-feed.example.com
+      # Security settings
+      SECURE_COOKIES: "true"
+      # Generate random hex strings for these (e.g. openssl rand -hex 32)
+      BETTER_AUTH_SECRET: "your-better-auth-secret-here"
+      CRON_SECRET: "your-cron-secret-here"
+      # Enable internal cron scheduler
+      ENABLE_INTERNAL_SCHEDULER: "true"
+      DATABASE_PATH: /app/data/quiet-feed.db
+    volumes:
+      - quiet-feed-data:/app/data
+
+volumes:
+  quiet-feed-data:
 ```
 
-The SQLite file lives in a named volume (`quiet-feed-data`) so it survives rebuilds.
-Migrations run automatically on container start (see the Dockerfile's `CMD`).
+To start the service:
+```bash
+docker compose up -d
+```
 
-If you're not using Traefik, delete the `labels` and `networks` blocks from
-`docker-compose.yml` and add a direct `ports: ["3000:3000"]` mapping instead.
+---
+
+### Docker / local container build (Development/Homelab)
+
+If you prefer to build the container from source, a `Dockerfile` and `compose.yml` are included in this repo (pre-configured for a Traefik-fronted reverse proxy).
+
+1. Edit the domains in the environment variables and the Traefik labels in `compose.yml`.
+2. Generate your secrets:
+   ```bash
+   export BETTER_AUTH_SECRET=$(openssl rand -hex 32)
+   export CRON_SECRET=$(openssl rand -hex 32)
+   ```
+3. Run the container:
+   ```bash
+   docker compose up -d --build
+   ```
+
+The SQLite database file is persisted in a named volume (`quiet-feed-data`). Migrations run automatically on container start.
+
+If you aren't using Traefik, you can modify `compose.yml` to remove the `labels` and `networks` blocks and expose port 3000 directly:
+```yaml
+    ports:
+      - "3000:3000"
+```
 
 ## How the daily edition actually gets compiled
 
