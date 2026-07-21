@@ -19,16 +19,20 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.from(feeds)
 		.where(eq(feeds.userId, locals.user.id));
 
-	// Brand-new account, no feeds yet — send them to set up subscriptions
-	// rather than showing an edition that can never have anything in it.
-	const edition = await getOrCompileTodaysEdition(locals.user.id);
-
 	const base = {
 		editionTime: settings.editionTime,
 		habitsMode: settings.habitsMode,
 		collapsedCategories: JSON.parse(settings.collapsedCategories) as string[],
 		feedCount
 	};
+
+	// Brand-new account, no feeds yet — skip compilation and show the
+	// onboarding empty state instead of a "Quiet day" edition with nothing in it.
+	if (feedCount === 0) {
+		return { ...base, edition: null };
+	}
+
+	const edition = await getOrCompileTodaysEdition(locals.user.id);
 
 	if (!edition) {
 		return { ...base, edition: null };

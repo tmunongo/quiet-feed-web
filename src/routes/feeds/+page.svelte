@@ -5,6 +5,9 @@
 
 	let showAddForm = $state(false);
 	let editingId = $state<string | null>(null);
+	let addSubmitting = $state(false);
+	let starterSubmitting = $state(false);
+	let importSubmitting = $state(false);
 
 	const categories = $derived(
 		Array.from(new Set(data.feeds.map((f) => f.category))).sort((a, b) => a.localeCompare(b))
@@ -42,13 +45,20 @@
 				No feeds yet. Start with a handful of recommended feeds, or bring your library over from
 				another reader.
 			</p>
-			<form method="POST" action="?/addStarter" use:enhance>
+			<form method="POST" action="?/addStarter" use:enhance={() => {
+				starterSubmitting = true;
+				return async ({ update }) => {
+					await update();
+					starterSubmitting = false;
+				};
+			}}>
 				<button
 					type="submit"
-					class="font-mono-tight rounded-sm px-4 py-2 text-sm uppercase tracking-wide"
+					disabled={starterSubmitting}
+					class="font-mono-tight rounded-sm px-4 py-2 text-sm uppercase tracking-wide disabled:opacity-50"
 					style="background-color: var(--color-ink); color: var(--color-paper);"
 				>
-					Add starter feeds
+					{starterSubmitting ? 'Adding…' : 'Add starter feeds'}
 				</button>
 			</form>
 		</div>
@@ -65,8 +75,11 @@
 										method="POST"
 										action="?/updateFeed"
 										use:enhance={() => {
-											return ({ result }) => {
-												if (result.type === 'success') editingId = null;
+											return async ({ result, update }) => {
+												if (result.type === 'success') {
+													editingId = null;
+												}
+												await update();
 											};
 										}}
 										class="flex w-full flex-col gap-2"
@@ -131,7 +144,11 @@
 										>
 											Edit
 										</button>
-										<form method="POST" action="?/deleteFeed" use:enhance>
+										<form method="POST" action="?/deleteFeed" use:enhance={() => {
+											return async ({ update }) => {
+												await update();
+											};
+										}}>
 											<input type="hidden" name="id" value={feed.id} />
 											<button type="submit" class="font-mono-tight text-xs uppercase" style="color: var(--color-stamp);">
 												Remove
@@ -162,8 +179,13 @@
 					method="POST"
 					action="?/addFeed"
 					use:enhance={() => {
-						return ({ result }) => {
-							if (result.type === 'success') showAddForm = false;
+						addSubmitting = true;
+						return async ({ result, update }) => {
+							if (result.type === 'success') {
+								showAddForm = false;
+							}
+							await update();
+							addSubmitting = false;
 						};
 					}}
 					class="mt-4 flex flex-col gap-3"
@@ -188,20 +210,32 @@
 							style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 						/>
 					</label>
-					<button
-						type="submit"
-						class="font-mono-tight self-start rounded-sm px-4 py-2 text-sm uppercase tracking-wide"
-						style="background-color: var(--color-ink); color: var(--color-paper);"
-					>
-						Add feed
-					</button>
+					<div class="flex items-center gap-3">
+						<button
+							type="submit"
+							disabled={addSubmitting}
+							class="font-mono-tight self-start rounded-sm px-4 py-2 text-sm uppercase tracking-wide disabled:opacity-50"
+							style="background-color: var(--color-ink); color: var(--color-paper);"
+						>
+							{addSubmitting ? 'Adding…' : 'Add feed'}
+						</button>
+						{#if addSubmitting}
+							<span class="text-dateline text-xs">Fetching feed info…</span>
+						{/if}
+					</div>
 				</form>
 			{/if}
 		</div>
 
 		<div>
 			<p class="text-dateline mb-2">Import from another reader</p>
-			<form method="POST" action="?/importOpml" enctype="multipart/form-data" use:enhance class="flex items-center gap-3">
+			<form method="POST" action="?/importOpml" enctype="multipart/form-data" use:enhance={() => {
+				importSubmitting = true;
+				return async ({ update }) => {
+					await update();
+					importSubmitting = false;
+				};
+			}} class="flex items-center gap-3">
 				<input
 					name="opml"
 					type="file"
@@ -212,10 +246,11 @@
 				/>
 				<button
 					type="submit"
-					class="font-mono-tight rounded-sm border px-3 py-1.5 text-xs uppercase tracking-wide"
+					disabled={importSubmitting}
+					class="font-mono-tight rounded-sm border px-3 py-1.5 text-xs uppercase tracking-wide disabled:opacity-50"
 					style="border-color: var(--color-line); color: var(--color-ink-soft);"
 				>
-					Import OPML
+					{importSubmitting ? 'Importing…' : 'Import OPML'}
 				</button>
 			</form>
 		</div>
