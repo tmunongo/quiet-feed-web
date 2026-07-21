@@ -11,7 +11,7 @@ const SECURE_COOKIES = process.env.SECURE_COOKIES === 'true';
 export const auth = betterAuth({
 	appName: 'Quiet Feed',
 	baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
-	secret: process.env.BETTER_AUTH_SECRET,
+	secret: process.env.BETTER_AUTH_SECRET || 'quiet-feed-build-dummy-secret-at-least-32-chars',
 	database: drizzleAdapter(db, {
 		provider: 'sqlite',
 		schema

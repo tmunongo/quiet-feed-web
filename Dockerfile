@@ -6,6 +6,7 @@ COPY package.json bun.lock* bun.lockb* ./
 RUN bun install --frozen-lockfile || bun install
 
 COPY . .
+ENV BETTER_AUTH_SECRET=quiet-feed-build-dummy-secret-at-least-32-chars
 RUN bun --bun vite build
 
 FROM oven/bun:1-slim AS runtime

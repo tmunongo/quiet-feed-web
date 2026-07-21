@@ -77,7 +77,7 @@ Create a `compose.yml` file:
 ```yaml
 services:
   quiet-feed:
-    image: ghcr.io/tmunongo/quiet-feed-web:latest # Replace with your package image path
+    image: ghcr.io/tmunongo/quiet-feed-web:latest
     container_name: quiet-feed
     restart: unless-stopped
     ports:
