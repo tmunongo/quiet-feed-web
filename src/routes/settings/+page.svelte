@@ -1,8 +1,28 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import TimePicker from '$lib/components/TimePicker.svelte';
 
 	let { data, form } = $props();
 	const s = $derived(data.settings);
+
+	// Local states for inputs to prevent browser form.reset desynchronization.
+	// Initialized to default fallbacks; the sync effect will populate them with the actual settings on mount.
+	let editionTime = $state('07:00');
+	let timezone = $state('UTC');
+	let theme = $state<'system' | 'light' | 'dark'>('system');
+	let defaultArticleCap = $state(15);
+	let habitsMode = $state(false);
+
+	// Sync local states if the underlying data updates
+	$effect(() => {
+		if (data.settings) {
+			editionTime = data.settings.editionTime;
+			timezone = data.settings.timezone;
+			theme = data.settings.theme;
+			defaultArticleCap = data.settings.defaultArticleCap;
+			habitsMode = data.settings.habitsMode;
+		}
+	});
 
 	// Common timezones first, since scrolling a full IANA list to find
 	// "Africa/Harare" or "America/New_York" is exactly the kind of friction
@@ -45,38 +65,41 @@
 		<p class="mb-4 text-sm" style="color: var(--color-airmail);">Saved.</p>
 	{/if}
 
-	<form method="POST" action="?/update" use:enhance class="flex flex-col gap-6">
-		<label class="flex flex-col gap-1.5">
+	<form
+		method="POST"
+		action="?/update"
+		use:enhance={() => {
+			return async ({ update }) => {
+				await update({ reset: false });
+			};
+		}}
+		class="flex flex-col gap-6"
+	>
+		<div class="flex flex-col gap-1.5">
 			<span class="text-dateline">Edition delivery time</span>
-			<input
-				type="time"
-				name="editionTime"
-				value={s?.editionTime ?? '07:00'}
-				required
-				class="w-40 rounded-sm border px-3 py-2 text-sm"
-				style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
-			/>
+			<TimePicker name="editionTime" bind:value={editionTime} />
 			<span class="text-xs" style="color: var(--color-ink-faint);">
 				Your feeds are fetched and frozen into one edition at this time, daily.
 			</span>
-		</label>
+		</div>
 
 		<label class="flex flex-col gap-1.5">
 			<span class="text-dateline">Timezone</span>
 			<select
 				name="timezone"
+				bind:value={timezone}
 				class="w-full rounded-sm border px-3 py-2 text-sm"
 				style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 			>
 				<optgroup label="Common">
 					{#each commonTimezones as tz}
-						<option value={tz} selected={s?.timezone === tz}>{tz}</option>
+						<option value={tz}>{tz}</option>
 					{/each}
 				</optgroup>
 				{#if otherTimezones.length > 0}
 					<optgroup label="All timezones">
 						{#each otherTimezones as tz}
-							<option value={tz} selected={s?.timezone === tz}>{tz}</option>
+							<option value={tz}>{tz}</option>
 						{/each}
 					</optgroup>
 				{/if}
@@ -86,9 +109,9 @@
 		<label class="flex flex-col gap-1.5">
 			<span class="text-dateline">Theme</span>
 			<div class="flex gap-4 text-sm" style="color: var(--color-ink);">
-				{#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as [value, label]}
+				{#each [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as [val, label]}
 					<label class="flex items-center gap-1.5">
-						<input type="radio" name="theme" {value} checked={s?.theme === value} />
+						<input type="radio" name="theme" value={val} bind:group={theme} />
 						{label}
 					</label>
 				{/each}
@@ -102,7 +125,7 @@
 				name="defaultArticleCap"
 				min="5"
 				max="50"
-				value={s?.defaultArticleCap ?? 15}
+				bind:value={defaultArticleCap}
 				class="w-24 rounded-sm border px-3 py-2 text-sm"
 				style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 			/>
@@ -112,7 +135,7 @@
 		</label>
 
 		<label class="flex items-start gap-3">
-			<input type="checkbox" name="habitsMode" checked={s?.habitsMode} class="mt-1" />
+			<input type="checkbox" name="habitsMode" bind:checked={habitsMode} class="mt-1" />
 			<span>
 				<span class="block text-sm" style="color: var(--color-ink);">Habits mode</span>
 				<span class="block text-xs" style="color: var(--color-ink-faint);">
@@ -123,7 +146,7 @@
 
 		<button
 			type="submit"
-			class="font-mono-tight mt-2 self-start rounded-sm px-5 py-2.5 text-sm uppercase tracking-wide"
+			class="font-mono-tight mt-2 self-start rounded-sm px-5 py-2.5 text-sm uppercase tracking-wide cursor-pointer"
 			style="background-color: var(--color-ink); color: var(--color-paper);"
 		>
 			Save settings
