@@ -2,6 +2,11 @@
 FROM oven/bun:1 AS build
 WORKDIR /app
 
+ARG COMMIT_HASH
+ARG APP_VERSION
+ENV COMMIT_HASH=${COMMIT_HASH}
+ENV APP_VERSION=${APP_VERSION}
+
 COPY package.json bun.lock* bun.lockb* ./
 RUN bun install --frozen-lockfile || bun install
 
@@ -12,6 +17,11 @@ RUN bun --bun vite build
 FROM oven/bun:1-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+
+ARG COMMIT_HASH
+ARG APP_VERSION
+ENV COMMIT_HASH=${COMMIT_HASH}
+ENV APP_VERSION=${APP_VERSION}
 
 COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle

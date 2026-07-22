@@ -1,6 +1,10 @@
 services:
   quiet-feed:
-    build: .
+    build:
+      context: .
+      args:
+        COMMIT_HASH: ${COMMIT_HASH:-}
+        APP_VERSION: ${APP_VERSION:-}
     container_name: quiet-feed
     restart: unless-stopped
     environment:

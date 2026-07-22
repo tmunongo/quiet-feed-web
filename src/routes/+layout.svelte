@@ -130,4 +130,35 @@
 	<main class="flex-1">
 		{@render children()}
 	</main>
+
+	{#if data.appInfo}
+		<footer class="mt-auto border-t py-6 text-xs" style="border-color: var(--color-line); color: var(--color-ink-faint);">
+			<div class="mx-auto flex max-w-3xl flex-col sm:flex-row items-center justify-between gap-2 px-5 font-mono-tight">
+				<div class="flex items-center gap-2">
+					<span>v{data.appInfo.version}</span>
+					<span>·</span>
+					<a
+						href={`${data.appInfo.repoUrl}/commit/${data.appInfo.commitHash}`}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="underline hover:opacity-100 transition-opacity"
+						style="opacity: 0.8;"
+					>
+						#{data.appInfo.commitHash}
+					</a>
+				</div>
+				<div>
+					<a
+						href={data.appInfo.repoUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="underline hover:opacity-100 transition-opacity"
+						style="opacity: 0.8;"
+					>
+						GitHub
+					</a>
+				</div>
+			</div>
+		</footer>
+	{/if}
 </div>
