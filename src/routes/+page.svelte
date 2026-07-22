@@ -34,7 +34,7 @@
 	}
 
 	let isSealed = $derived(
-		data.edition !== null && data.edition.totalCount > 0 && data.edition.readCount === data.edition.totalCount
+		!!data.edition && data.edition.totalCount > 0 && data.edition.readCount === data.edition.totalCount
 	);
 </script>
 
@@ -93,20 +93,20 @@
 	{:else}
 		<header class="mb-8 flex items-start justify-between">
 			<div>
-				<p class="text-dateline mb-1">Issue №{data.edition.issueNumber} · {dateLabel(data.edition.date)}</p>
+				<p class="text-dateline mb-1">Issue №{data.edition?.issueNumber} · {dateLabel(data.edition?.date ?? '')}</p>
 				<h1 class="font-display text-3xl" style="color: var(--color-ink);">Today's edition</h1>
-				{#if data.edition.totalCount > 0}
+				{#if data.edition && data.edition.totalCount > 0}
 					<p class="mt-2 text-sm" style="color: var(--color-ink-faint);">
 						{data.edition.readCount} of {data.edition.totalCount} read
 					</p>
 				{/if}
 			</div>
-			{#if isSealed}
+			{#if isSealed && data.edition}
 				<Seal issueNumber={data.edition.issueNumber} dateLabel={dateLabel(data.edition.date)} size={64} />
 			{/if}
 		</header>
 
-		{#if isSealed}
+		{#if isSealed && data.edition}
 			<div class="flex flex-col items-center py-20 text-center">
 				<Seal issueNumber={data.edition.issueNumber} dateLabel={dateLabel(data.edition.date)} size={150} />
 				<h2 class="font-display mt-8 text-2xl" style="color: var(--color-ink);">
@@ -116,7 +116,7 @@
 					Next edition arrives tomorrow at {data.editionTime}.
 				</p>
 			</div>
-		{:else if data.edition.totalCount === 0}
+		{:else if data.edition && data.edition.totalCount === 0}
 			<div class="flex flex-col items-center py-20 text-center">
 				<p class="text-dateline mb-3">Quiet day</p>
 				<p class="max-w-sm text-sm" style="color: var(--color-ink-soft);">
@@ -124,7 +124,7 @@
 					bug — some days are just quiet.
 				</p>
 			</div>
-		{:else}
+		{:else if data.edition}
 			<div class="flex flex-col gap-8">
 				{#each data.edition.categories as cat}
 					{@const isCollapsed = collapsed.has(cat.category)}

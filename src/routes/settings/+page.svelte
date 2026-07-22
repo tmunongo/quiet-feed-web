@@ -1,28 +1,17 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import TimePicker from '$lib/components/TimePicker.svelte';
 
 	let { data, form } = $props();
 	const s = $derived(data.settings);
 
-	// Local states for inputs to prevent browser form.reset desynchronization.
-	// Initialized to default fallbacks; the sync effect will populate them with the actual settings on mount.
-	let editionTime = $state('07:00');
-	let timezone = $state('UTC');
-	let theme = $state<'system' | 'light' | 'dark'>('system');
-	let defaultArticleCap = $state(15);
-	let habitsMode = $state(false);
-
-	// Sync local states if the underlying data updates
-	$effect(() => {
-		if (data.settings) {
-			editionTime = data.settings.editionTime;
-			timezone = data.settings.timezone;
-			theme = data.settings.theme;
-			defaultArticleCap = data.settings.defaultArticleCap;
-			habitsMode = data.settings.habitsMode;
-		}
-	});
+	// Local states for inputs, initialized from server-loaded settings.
+	let editionTime = $state(untrack(() => data.settings?.editionTime ?? '07:00'));
+	let timezone = $state(untrack(() => data.settings?.timezone ?? 'UTC'));
+	let theme = $state<'system' | 'light' | 'dark'>(untrack(() => data.settings?.theme ?? 'system'));
+	let defaultArticleCap = $state(untrack(() => data.settings?.defaultArticleCap ?? 15));
+	let habitsMode = $state(untrack(() => data.settings?.habitsMode ?? false));
 
 	// Common timezones first, since scrolling a full IANA list to find
 	// "Africa/Harare" or "America/New_York" is exactly the kind of friction
@@ -45,7 +34,7 @@
 		'UTC'
 	];
 
-	const otherTimezones = $derived(data.availableTimezones.filter((tz) => !commonTimezones.includes(tz)));
+	const otherTimezones = $derived((data.availableTimezones ?? []).filter((tz) => !commonTimezones.includes(tz)));
 </script>
 
 <svelte:head>
@@ -69,8 +58,15 @@
 		method="POST"
 		action="?/update"
 		use:enhance={() => {
-			return async ({ update }) => {
+			return async ({ result, update }) => {
 				await update({ reset: false });
+				if (result.type === 'success' && data.settings) {
+					editionTime = data.settings.editionTime;
+					timezone = data.settings.timezone;
+					theme = data.settings.theme;
+					defaultArticleCap = data.settings.defaultArticleCap;
+					habitsMode = data.settings.habitsMode;
+				}
 			};
 		}}
 		class="flex flex-col gap-6"

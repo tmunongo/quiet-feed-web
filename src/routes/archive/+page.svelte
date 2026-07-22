@@ -17,11 +17,11 @@
 		<h1 class="font-display text-2xl" style="color: var(--color-ink);">Archive</h1>
 	</header>
 
-	{#if data.editions.length === 0}
+	{#if !data.editions?.length}
 		<p class="text-sm" style="color: var(--color-ink-soft);">No editions have been sealed yet.</p>
 	{:else}
 		<ul class="flex flex-col">
-			{#each data.editions as edition, i}
+			{#each data.editions ?? [] as edition, i}
 				<li class="rule py-4" class:border-0={i === 0}>
 					<a href="/archive/{edition.date}" class="flex items-center justify-between">
 						<div>

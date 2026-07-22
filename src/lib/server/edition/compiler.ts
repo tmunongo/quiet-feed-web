@@ -56,6 +56,7 @@ export async function isEditionDue(userId: string): Promise<boolean> {
 
 	if (nowTime < settings.editionTime) return false;
 	if (settings.lastEditionDate === today) return false;
+	if (await hasEditionForToday(userId, settings.timezone)) return false;
 
 	return true;
 }
@@ -71,12 +72,33 @@ function effectiveCap(feed: Feed, defaultCap: number): number {
  */
 export async function compileEdition(userId: string): Promise<{ editionId: string; articleCount: number }> {
 	const settings = await getOrCreateUserSettings(userId);
+	const today = dateKeyInTimezone(new Date(), settings.timezone);
+
+	// Check if today's edition already exists before fetching feeds
+	const [existingEarly] = await db
+		.select({ id: editions.id })
+		.from(editions)
+		.where(and(eq(editions.userId, userId), eq(editions.date, today)))
+		.limit(1);
+
+	if (existingEarly) {
+		return { editionId: existingEarly.id, articleCount: 0 };
+	}
 
 	await fetchAllFeedsForUser(userId);
 
-	const userFeeds = await db.select().from(feeds).where(eq(feeds.userId, userId));
+	// Double-check after fetching feeds to guard against race conditions
+	const [existingLate] = await db
+		.select({ id: editions.id })
+		.from(editions)
+		.where(and(eq(editions.userId, userId), eq(editions.date, today)))
+		.limit(1);
 
-	const today = dateKeyInTimezone(new Date(), settings.timezone);
+	if (existingLate) {
+		return { editionId: existingLate.id, articleCount: 0 };
+	}
+
+	const userFeeds = await db.select().from(feeds).where(eq(feeds.userId, userId));
 
 	const [{ count: priorEditions }] = await db
 		.select({ count: sql<number>`count(*)` })
@@ -84,13 +106,25 @@ export async function compileEdition(userId: string): Promise<{ editionId: strin
 		.where(eq(editions.userId, userId));
 
 	const editionId = randomUUID();
-	await db.insert(editions).values({
-		id: editionId,
-		userId,
-		date: today,
-		issueNumber: priorEditions + 1,
-		createdAt: new Date()
-	});
+	try {
+		await db.insert(editions).values({
+			id: editionId,
+			userId,
+			date: today,
+			issueNumber: priorEditions + 1,
+			createdAt: new Date()
+		});
+	} catch (err) {
+		const [existing] = await db
+			.select({ id: editions.id })
+			.from(editions)
+			.where(and(eq(editions.userId, userId), eq(editions.date, today)))
+			.limit(1);
+		if (existing) {
+			return { editionId: existing.id, articleCount: 0 };
+		}
+		throw err;
+	}
 
 	let position = 0;
 	let totalArticles = 0;

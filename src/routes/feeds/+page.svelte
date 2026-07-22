@@ -10,11 +10,11 @@
 	let importSubmitting = $state(false);
 
 	const categories = $derived(
-		Array.from(new Set(data.feeds.map((f) => f.category))).sort((a, b) => a.localeCompare(b))
+		Array.from(new Set((data.feeds ?? []).map((f) => f.category))).sort((a, b) => a.localeCompare(b))
 	);
 
 	function feedsInCategory(category: string) {
-		return data.feeds.filter((f) => f.category === category);
+		return (data.feeds ?? []).filter((f) => f.category === category);
 	}
 </script>
 
@@ -39,7 +39,7 @@
 		<p class="mb-4 text-sm" style="color: var(--color-stamp);">{form.message}</p>
 	{/if}
 
-	{#if data.feeds.length === 0}
+	{#if !data.feeds?.length}
 		<div class="mb-10 rounded-sm border p-6 text-center" style="border-color: var(--color-line);">
 			<p class="mb-4 text-sm" style="color: var(--color-ink-soft);">
 				No feeds yet. Start with a handful of recommended feeds, or bring your library over from
