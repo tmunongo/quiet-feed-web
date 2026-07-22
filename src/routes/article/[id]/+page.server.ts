@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { editionArticles, articles, feeds, editions } from '$lib/server/db/schema';
 import type { PageServerLoad } from './$types';
@@ -39,6 +39,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(404, 'Article not found');
 	}
 
+	const [latestEdition] = await db
+		.select({ date: editions.date })
+		.from(editions)
+		.where(eq(editions.userId, locals.user.id))
+		.orderBy(desc(editions.date))
+		.limit(1);
+
+	const isLatest = latestEdition && latestEdition.date === row.editionDate;
+	const backUrl = isLatest ? '/' : `/archive/${row.editionDate}`;
+
 	return {
 		editionArticleId: row.editionArticleId,
 		title: row.title,
@@ -51,6 +61,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		read: row.read,
 		scrollPercent: row.scrollPercent,
 		scrollOffset: row.scrollOffset,
-		issueNumber: row.issueNumber
+		issueNumber: row.issueNumber,
+		backUrl
 	};
 };

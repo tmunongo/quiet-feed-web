@@ -3,8 +3,8 @@
 
 	let { data } = $props();
 
-	let progressPercent = $state(data.scrollPercent);
-	let isRead = $state(data.read);
+	let progressPercent = $state(0);
+	let isRead = $state(false);
 
 	// /article/[id] reuses the same component instance across navigations
 	// between two articles (only the dynamic param changes), so local state
@@ -95,8 +95,31 @@
 	></div>
 </div>
 
+<!-- Sticky floating "Back to edition" button pinned on the left side of the screen -->
+<a
+	href={data.backUrl}
+	class="fixed bottom-6 left-4 md:bottom-8 md:left-8 z-40 flex items-center justify-center h-11 w-11 md:h-auto md:w-auto md:px-4 md:py-2.5 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 group font-mono-tight text-xs font-medium"
+	style="background-color: var(--color-stamp); color: var(--color-paper);"
+	aria-label="Back to edition"
+	title="Back to edition"
+>
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 20 20"
+		fill="currentColor"
+		class="w-5 h-5 md:w-4 md:h-4 md:mr-1.5 transition-transform group-hover:-translate-x-0.5"
+	>
+		<path
+			fill-rule="evenodd"
+			d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 0 1 0-1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10z"
+			clip-rule="evenodd"
+		/>
+	</svg>
+	<span class="hidden md:inline">Back to edition</span>
+</a>
+
 <div class="mx-auto max-w-xl px-5 py-12">
-	<a href="/" class="font-mono-tight mb-8 inline-block text-xs" style="color: var(--color-ink-faint);">
+	<a href={data.backUrl} class="font-mono-tight mb-8 inline-block text-xs" style="color: var(--color-ink-faint);">
 		← Back to edition
 	</a>
 
