@@ -1,11 +1,19 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/stores';
-	import { signOut } from '$lib/auth-client';
+	import { signOut, useSession } from '$lib/auth-client';
 	import { goto, invalidateAll } from '$app/navigation';
 
 	let { data, children } = $props();
 	let mobileMenuOpen = $state(false);
+
+	// Client-side session acts as a fallback for when SSR misses the cookie
+	// (e.g. slow DB lookup on first cold request, especially on mobile).
+	const session = useSession();
+
+	// Show the nav if either the SSR data has a user OR the client session does.
+	// This prevents the navbar from being hidden on initial load and requiring a refresh.
+	const isLoggedIn = $derived(!!data.user || !!$session?.data?.user);
 
 	const navLinks = [
 		{ href: '/', label: 'Edition' },
@@ -45,7 +53,7 @@
 </script>
 
 <div class="flex min-h-screen flex-col" style="background-color: var(--color-paper); color: var(--color-ink);">
-	{#if data.user}
+	{#if isLoggedIn}
 		<header class="border-b relative" style="border-color: var(--color-line);">
 			<div class="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
 				<a href="/" onclick={() => (mobileMenuOpen = false)} class="font-mono-tight text-sm font-medium lowercase tracking-wide">
