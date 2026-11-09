@@ -60,16 +60,26 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const id = data.get('id') as string;
+		const url = (data.get('url') as string)?.trim();
 		const title = (data.get('title') as string)?.trim();
 		const category = (data.get('category') as string)?.trim();
 		const articleCapRaw = data.get('articleCap') as string;
 		const articleCap = articleCapRaw ? parseInt(articleCapRaw, 10) : null;
 
-		if (!id || !title || !category) return fail(400, { message: 'Missing fields.' });
+		if (!id || !url || !title || !category) return fail(400, { message: 'Missing fields.' });
 
 		await db
 			.update(feeds)
-			.set({ title, category, articleCap: articleCap && articleCap > 0 ? articleCap : null })
+			.set({
+				url,
+				title,
+				category,
+				articleCap: articleCap && articleCap > 0 ? articleCap : null,
+				// Clear cached fetch state so the new URL is tried fresh
+				etag: null,
+				lastModified: null,
+				lastFetchError: null
+			})
 			.where(and(eq(feeds.id, id), eq(feeds.userId, locals.user.id)));
 
 		return { success: true };

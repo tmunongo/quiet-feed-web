@@ -91,6 +91,15 @@
 											class="rounded-sm border px-2 py-1 text-sm"
 											style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 										/>
+										<input
+											name="url"
+											type="url"
+											value={feed.url}
+											required
+											placeholder="https://example.com/feed.xml"
+											class="rounded-sm border px-2 py-1 font-mono text-xs"
+											style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink-soft);"
+										/>
 										<div class="flex gap-2">
 											<input
 												name="category"
