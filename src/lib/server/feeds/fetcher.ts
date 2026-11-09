@@ -49,6 +49,27 @@ export async function fetchFeed(feed: Feed): Promise<FetchResult> {
 			return { feedId: feed.id, status: 'error', newArticleCount: 0, error: message };
 		}
 
+		// After following redirects, verify we actually got XML/feed content and
+		// not an HTML page. For example, Substack redirects moved/renamed feeds
+		// to a profile page (substack.com/@handle) which returns text/html —
+		// rss-parser then throws cryptic XML parse errors like "Attribute without value".
+		const contentType = res.headers.get('content-type') ?? '';
+		if (
+			!contentType.includes('xml') &&
+			!contentType.includes('rss') &&
+			!contentType.includes('atom') &&
+			!contentType.includes('json') // JSON Feed
+		) {
+			const finalUrl = res.url;
+			const redirectNote = finalUrl !== feed.url ? ` (redirected to ${finalUrl})` : '';
+			const message = `URL returned "${contentType || 'unknown content-type'}" instead of a feed${redirectNote}. The feed URL may have changed.`;
+			await db
+				.update(feeds)
+				.set({ lastFetchedAt: new Date(), lastFetchError: message })
+				.where(eq(feeds.id, feed.id));
+			return { feedId: feed.id, status: 'error', newArticleCount: 0, error: message };
+		}
+
 		const xml = await res.text();
 		const parsed = await parser.parseString(xml);
 
@@ -94,7 +115,12 @@ export async function fetchFeed(feed: Feed): Promise<FetchResult> {
 
 		return { feedId: feed.id, status: 'updated', newArticleCount: newCount };
 	} catch (err) {
-		const message = err instanceof Error ? err.message : 'Unknown fetch error';
+		let message = err instanceof Error ? err.message : 'Unknown fetch error';
+		// rss-parser throws raw XML parse errors that are hard to understand.
+		// Rewrite the most common ones into plain language.
+		if (message.includes('Attribute without value') || message.includes('Feed not recognized')) {
+			message = `Could not parse feed as RSS/Atom XML. The URL may have redirected to a non-feed page (e.g. an HTML profile page). Double-check the feed URL.`;
+		}
 		await db
 			.update(feeds)
 			.set({ lastFetchedAt: new Date(), lastFetchError: message })
