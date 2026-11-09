@@ -1,5 +1,12 @@
 # Quiet Feed
 
+[![CI](https://github.com/tmunongo/quiet-feed-web/actions/workflows/ci.yml/badge.svg)](https://github.com/tmunongo/quiet-feed-web/actions/workflows/ci.yml)
+[![Build and Release](https://github.com/tmunongo/quiet-feed-web/actions/workflows/release.yml/badge.svg)](https://github.com/tmunongo/quiet-feed-web/actions/workflows/release.yml)
+[![GitHub release](https://img.shields.io/github/v/release/tmunongo/quiet-feed-web)](https://github.com/tmunongo/quiet-feed-web/releases/latest)
+[![Docker Image](https://img.shields.io/badge/ghcr.io-quiet--feed--web-blue?logo=docker)](https://github.com/tmunongo/quiet-feed-web/pkgs/container/quiet-feed-web)
+[![Built with Bun](https://img.shields.io/badge/runtime-Bun-black?logo=bun)](https://bun.sh)
+[![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-ff3e00?logo=svelte)](https://kit.svelte.dev)
+
 I built this to combat information overload. Between [Hackernews](https://news.ycombinator.com), and the countless [Substack](https://substack.com) newsletters I am subscribed to, I honestly can't keep up. Yet, I constantly feel like I am missing out. I know there are so many RSS feed readers out there, but this [post](https://www.terrygodier.com/phantom-obligation) by Terry Godier had me thinking about how RSS feeders come with this implicity pressure to constantly stay on top of things. I thought RSS was a way to manage information overload and avoid being pulled down rabbit holes, but instead I just found myself obsessively refreshing my feed reader.
 
 Quiet Feed is built around a single frozen daily "Edition" instead of an
