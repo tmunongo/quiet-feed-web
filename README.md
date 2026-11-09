@@ -1,14 +1,13 @@
 # Quiet Feed
 
-A full-stack RSS/Atom reader built around a single frozen daily "Edition" instead of an
+I built this to combat information overload. Between [Hackernews](https://news.ycombinator.com), and the countless [Substack](https://substack.com) newsletters I am subscribed to, I honestly can't keep up. Yet, I constantly feel like I am missing out. I know there are so many RSS feed readers out there, but this [post](https://www.terrygodier.com/phantom-obligation) by Terry Godier had me thinking about how RSS feeders come with this implicity pressure to constantly stay on top of things. I thought RSS was a way to manage information overload and avoid being pulled down rabbit holes, but instead I just found myself obsessively refreshing my feed reader.
+
+Quiet Feed is built around a single frozen daily "Edition" instead of an
 infinite, badge-driven feed. SvelteKit + Bun + SQLite (via `bun:sqlite`/Drizzle) + Better
 Auth, packaged as an installable PWA for offline reading of whatever edition you've already
 opened.
 
-This is a hosted service, not a local-only app: feed fetching, the daily compile job, and
-auth all live on the server. The PWA layer is for installability and offline reading, not
-for client-side fetching (most RSS hosts don't send CORS headers, so client-side fetching
-of arbitrary feeds isn't reliably possible from a browser anyway).
+Maybe at some point I'll choose to host this for public use, but for now it's strictly BYOS (bring your own server), so host it on your own infra and enjoy.
 
 ## Stack
 

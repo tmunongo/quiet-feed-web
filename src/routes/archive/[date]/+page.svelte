@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Seal from '$lib/components/Seal.svelte';
+	import DailyDispatch from '$lib/components/DailyDispatch.svelte';
 
 	let { data } = $props();
 
@@ -26,6 +27,15 @@
 			</div>
 			<Seal issueNumber={data.edition.issueNumber} dateLabel={dateLabel(data.edition.date)} size={56} />
 		</header>
+
+		{#if data.edition.summary}
+			<DailyDispatch
+				summary={data.edition.summary}
+				issueNumber={data.edition.issueNumber}
+				totalArticles={data.edition.totalCount}
+				dateParam={data.edition.date}
+			/>
+		{/if}
 
 		<div class="flex flex-col gap-8">
 			{#each data.edition.categories as cat}

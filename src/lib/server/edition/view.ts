@@ -3,7 +3,7 @@
 // its own read/scroll-progress state.
 import { eq, asc } from 'drizzle-orm';
 import { db } from '../db';
-import { articles, editionArticles, editions, feeds } from '../db/schema';
+import { articles, editionArticles, editions, feeds, editionSummaries, type EditionSummary } from '../db/schema';
 
 export interface EditionArticleView {
 	editionArticleId: string;
@@ -31,11 +31,18 @@ export interface EditionView {
 	categories: EditionCategoryView[];
 	totalCount: number;
 	readCount: number;
+	summary: EditionSummary | null;
 }
 
 export async function getEditionView(editionId: string): Promise<EditionView | null> {
 	const [edition] = await db.select().from(editions).where(eq(editions.id, editionId)).limit(1);
 	if (!edition) return null;
+
+	const [summary] = await db
+		.select()
+		.from(editionSummaries)
+		.where(eq(editionSummaries.editionId, editionId))
+		.limit(1);
 
 	const rows = await db
 		.select({
@@ -91,6 +98,7 @@ export async function getEditionView(editionId: string): Promise<EditionView | n
 		issueNumber: edition.issueNumber,
 		categories,
 		totalCount: rows.length,
-		readCount
+		readCount,
+		summary: summary ?? null
 	};
 }

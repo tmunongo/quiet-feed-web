@@ -5,6 +5,7 @@ import { eq, count } from 'drizzle-orm';
 import { getOrCompileTodaysEdition, hasEditionForToday, compileEdition } from '$lib/server/edition/compiler';
 import { getEditionView } from '$lib/server/edition/view';
 import { getOrCreateUserSettings } from '$lib/server/db/user-settings';
+import { generateAndSaveEditionSummary } from '$lib/server/edition/ai';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -23,7 +24,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		editionTime: settings.editionTime,
 		habitsMode: settings.habitsMode,
 		collapsedCategories: JSON.parse(settings.collapsedCategories) as string[],
-		feedCount
+		feedCount,
+		aiDigestEnabled: settings.aiDigestEnabled,
+		hasGeminiKey: !!settings.geminiApiKey
 	};
 
 	// Brand-new account, no feeds yet — skip compilation and show the
@@ -58,5 +61,21 @@ export const actions: Actions = {
 
 		await compileEdition(locals.user.id);
 		return { success: true };
+	},
+
+	generateSummary: async ({ locals }) => {
+		if (!locals.user) throw redirect(302, '/login');
+
+		const edition = await getOrCompileTodaysEdition(locals.user.id);
+		if (!edition) {
+			return fail(404, { message: 'No edition available to summarize.' });
+		}
+
+		const res = await generateAndSaveEditionSummary(edition.id, locals.user.id, true);
+		if (!res.success) {
+			return fail(400, { summaryError: res.error || 'Failed to generate summary.' });
+		}
+
+		return { summarySuccess: true };
 	}
 };

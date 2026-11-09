@@ -9,6 +9,7 @@ import { db } from '../db';
 import { feeds, articles, editions, editionArticles, userSettings, type Feed } from '../db/schema';
 import { fetchAllFeedsForUser } from '../feeds/fetcher';
 import { getOrCreateUserSettings } from '../db/user-settings';
+import { generateAndSaveEditionSummary } from './ai';
 
 /** YYYY-MM-DD for "now" as seen in the given IANA timezone. */
 export function dateKeyInTimezone(date: Date, timezone: string): string {
@@ -156,6 +157,12 @@ export async function compileEdition(userId: string): Promise<{ editionId: strin
 	}
 
 	await db.update(userSettings).set({ lastEditionDate: today }).where(eq(userSettings.userId, userId));
+
+	if (settings.aiDigestEnabled && settings.aiDigestTrigger === 'auto' && settings.geminiApiKey) {
+		generateAndSaveEditionSummary(editionId, userId).catch((err) => {
+			console.error(`[compiler] AI digest generation failed for user ${userId}:`, err);
+		});
+	}
 
 	return { editionId, articleCount: totalArticles };
 }

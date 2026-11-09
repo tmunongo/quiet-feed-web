@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core';
+import { DEFAULT_MODEL } from '../../ai/models';
 
 // ---------------------------------------------------------------------------
 // Better Auth core tables (sqlite shape expected by drizzleAdapter). Keep the
@@ -78,7 +79,17 @@ export const userSettings = sqliteTable('user_settings', {
 	// ISO date (YYYY-MM-DD) of the most recently compiled edition.
 	lastEditionDate: text('last_edition_date'),
 	// JSON array of category names the user has collapsed.
-	collapsedCategories: text('collapsed_categories').notNull().default('[]')
+	collapsedCategories: text('collapsed_categories').notNull().default('[]'),
+	// Encrypted Gemini API key (AES-256-GCM)
+	geminiApiKey: text('gemini_api_key'),
+	// Gemini model identifier (e.g. 'gemini-3.6-flash', 'gemini-3.8-flash')
+	aiModel: text('ai_model').notNull().default(DEFAULT_MODEL),
+	// Whether AI daily digest summary is enabled
+	aiDigestEnabled: integer('ai_digest_enabled', { mode: 'boolean' }).notNull().default(false),
+	// Trigger mode: 'manual' (on-demand button) or 'auto' (upon compilation)
+	aiDigestTrigger: text('ai_digest_trigger', { enum: ['manual', 'auto'] })
+		.notNull()
+		.default('manual')
 });
 
 // ---------------------------------------------------------------------------
@@ -164,8 +175,30 @@ export const editionArticles = sqliteTable(
 	(table) => [unique('edition_articles_unique').on(table.editionId, table.articleId)]
 );
 
+// ---------------------------------------------------------------------------
+// AI Edition Summaries: synthesized executive daily digest
+// ---------------------------------------------------------------------------
+
+export const editionSummaries = sqliteTable('edition_summaries', {
+	id: text('id').primaryKey(),
+	editionId: text('edition_id')
+		.notNull()
+		.references(() => editions.id, { onDelete: 'cascade' })
+		.unique(),
+	contentMarkdown: text('content_markdown').notNull(),
+	model: text('model').notNull(),
+	promptTokens: integer('prompt_tokens'),
+	completionTokens: integer('completion_tokens'),
+	status: text('status', { enum: ['generating', 'completed', 'failed'] })
+		.notNull()
+		.default('completed'),
+	errorMessage: text('error_message'),
+	createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+});
+
 export type UserSettings = typeof userSettings.$inferSelect;
 export type Feed = typeof feeds.$inferSelect;
 export type Article = typeof articles.$inferSelect;
 export type Edition = typeof editions.$inferSelect;
 export type EditionArticle = typeof editionArticles.$inferSelect;
+export type EditionSummary = typeof editionSummaries.$inferSelect;

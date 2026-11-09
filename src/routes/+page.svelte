@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Seal from '$lib/components/Seal.svelte';
+	import DailyDispatch from '$lib/components/DailyDispatch.svelte';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 
@@ -105,6 +106,19 @@
 				<Seal issueNumber={data.edition.issueNumber} dateLabel={dateLabel(data.edition.date)} size={64} />
 			{/if}
 		</header>
+
+		{#if data.edition && data.edition.totalCount > 0}
+			<DailyDispatch
+				summary={data.edition.summary}
+				canGenerate={data.aiDigestEnabled &&
+					data.hasGeminiKey &&
+					(!data.edition.summary || data.edition.summary.status === 'failed')}
+				issueNumber={data.edition.issueNumber}
+				totalArticles={data.edition.totalCount}
+				hasGeminiKey={data.hasGeminiKey}
+				aiDigestEnabled={data.aiDigestEnabled}
+			/>
+		{/if}
 
 		{#if isSealed && data.edition}
 			<div class="flex flex-col items-center py-20 text-center">
