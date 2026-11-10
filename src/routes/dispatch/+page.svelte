@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { enhance } from '$app/forms';
+	import { applyAction, deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { renderDispatchMarkdown } from '$lib/markdown';
 
@@ -8,6 +8,7 @@
 
 	let progressPercent = $state(0);
 	let isRegenerating = $state(false);
+	let requestError = $state('');
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 	function handleScroll() {
@@ -22,7 +23,9 @@
 		if (data.summary?.status === 'generating') {
 			if (!pollInterval) {
 				pollInterval = setInterval(() => {
-					invalidateAll();
+					void invalidateAll().catch(() => {
+						requestError = 'Could not check dispatch progress. Please try refreshing the page.';
+					});
 				}, 2500);
 			}
 		} else {
@@ -55,6 +58,38 @@
 	const generateAction = $derived(
 		`?/generateSummary${data.edition?.date ? `&date=${encodeURIComponent(data.edition.date)}` : ''}`
 	);
+
+	async function submitDispatch(event: SubmitEvent) {
+		event.preventDefault();
+		if (isRegenerating) return;
+		isRegenerating = true;
+		requestError = '';
+		const formElement = event.currentTarget as HTMLFormElement;
+		try {
+			const response = await fetch(formElement.action, {
+				method: 'POST',
+				body: new FormData(formElement),
+				headers: { 'x-sveltekit-action': 'true' }
+			});
+			const result = deserialize(await response.text());
+			if (result.type === 'error') throw new Error('Dispatch request failed');
+			if (result.type === 'success') await invalidateAll();
+			await applyAction(result);
+		} catch {
+			// A proxy may time out after generation has started or even completed.
+			// Reload its persisted state before reporting a problem to the reader.
+			try {
+				await invalidateAll();
+				if (data.summary?.status !== 'generating' && data.summary?.status !== 'completed') {
+					requestError = 'Could not confirm the dispatch request. Please try again.';
+				}
+			} catch {
+				requestError = 'Could not check the dispatch. Please refresh the page and try again.';
+			}
+		} finally {
+			isRegenerating = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -117,13 +152,7 @@
 				<form
 					method="POST"
 					action={generateAction}
-					use:enhance={() => {
-						isRegenerating = true;
-						return async ({ update }) => {
-							isRegenerating = false;
-							await update();
-						};
-					}}
+					onsubmit={submitDispatch}
 				>
 					<button
 						type="submit"
@@ -138,9 +167,9 @@
 		</div>
 	</header>
 
-	{#if form?.summaryError}
+	{#if requestError || form?.summaryError}
 		<div class="mb-6 rounded-sm border p-4 text-sm" style="border-color: var(--color-stamp); color: var(--color-stamp);">
-			{form.summaryError}
+			{requestError || form?.summaryError}
 		</div>
 	{/if}
 
@@ -191,13 +220,7 @@
 				<form
 					method="POST"
 					action={generateAction}
-					use:enhance={() => {
-						isRegenerating = true;
-						return async ({ update }) => {
-							isRegenerating = false;
-							await update();
-						};
-					}}
+					onsubmit={submitDispatch}
 				>
 					<button
 						type="submit"
