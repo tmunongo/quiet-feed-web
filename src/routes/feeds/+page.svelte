@@ -85,12 +85,17 @@
 										class="flex w-full flex-col gap-2"
 									>
 										<input type="hidden" name="id" value={feed.id} />
+										<label class="flex flex-col gap-1">
+											<span class="text-dateline">Feed name</span>
 										<input
 											name="title"
 											value={feed.title}
 											class="rounded-sm border px-2 py-1 text-sm"
 											style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 										/>
+										</label>
+										<label class="flex flex-col gap-1">
+											<span class="text-dateline">Feed URL</span>
 										<input
 											name="url"
 											type="url"
@@ -100,14 +105,20 @@
 											class="rounded-sm border px-2 py-1 font-mono text-xs"
 											style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink-soft);"
 										/>
+										</label>
 										<div class="flex gap-2">
+											<label class="flex w-1/2 flex-col gap-1">
+												<span class="text-dateline">Category</span>
 											<input
 												name="category"
 												value={feed.category}
 												placeholder="Category"
-												class="w-1/2 rounded-sm border px-2 py-1 text-sm"
+												class="w-full rounded-sm border px-2 py-1 text-sm"
 												style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 											/>
+											</label>
+											<label class="flex w-1/2 flex-col gap-1">
+												<span class="text-dateline">Article cap</span>
 											<input
 												name="articleCap"
 												type="number"
@@ -115,9 +126,10 @@
 												max="50"
 												value={feed.articleCap ?? ''}
 												placeholder={`Cap (default ${data.defaultArticleCap})`}
-												class="w-1/2 rounded-sm border px-2 py-1 text-sm"
+												class="w-full rounded-sm border px-2 py-1 text-sm"
 												style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);"
 											/>
+											</label>
 										</div>
 										<div class="flex gap-3">
 											<button type="submit" class="font-mono-tight text-xs uppercase" style="color: var(--color-airmail);">

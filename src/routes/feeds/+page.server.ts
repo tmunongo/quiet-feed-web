@@ -5,6 +5,7 @@ import { db } from '$lib/server/db';
 import { feeds } from '$lib/server/db/schema';
 import { getOrCreateUserSettings } from '$lib/server/db/user-settings';
 import { parseOpml, type ParsedOpmlFeed } from '$lib/server/feeds/opml';
+import { fetchFeed } from '$lib/server/feeds/fetcher';
 import Parser from 'rss-parser';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -68,7 +69,7 @@ export const actions: Actions = {
 
 		if (!id || !url || !title || !category) return fail(400, { message: 'Missing fields.' });
 
-		await db
+		const updated = await db
 			.update(feeds)
 			.set({
 				url,
@@ -80,7 +81,10 @@ export const actions: Actions = {
 				lastModified: null,
 				lastFetchError: null
 			})
-			.where(and(eq(feeds.id, id), eq(feeds.userId, locals.user.id)));
+			.where(and(eq(feeds.id, id), eq(feeds.userId, locals.user.id)))
+			.returning();
+
+		if (updated[0]) await fetchFeed(updated[0]);
 
 		return { success: true };
 	},
