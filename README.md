@@ -16,6 +16,19 @@ opened.
 
 Maybe at some point I'll choose to host this for public use, but for now it's strictly BYOS (bring your own server), so host it on your own infra and enjoy.
 
+## Reading at your own pace
+
+- Editions contain at most **20 articles** by default. Change the whole-edition limit
+  (1–100) in Settings. Per-feed caps still apply; selection takes one story per source
+  per round and rotates the starting source between editions. Within each feed, newest
+  stories come first. Stories left out may appear in later editions; existing editions
+  never change when you adjust the limit.
+- **Close today’s edition** whenever you have had enough. Closing is saved separately
+  from reading progress, so unread articles stay unread. The closed screen links to the
+  full issue in the archive, and the next edition arrives as usual.
+- The archive keeps past issues available without completion counts. There is no
+  catch-up requirement.
+
 ## Stack
 
 - **Runtime:** [Bun](https://bun.sh) — also used for the SQLite driver (`bun:sqlite`), no

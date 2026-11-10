@@ -28,6 +28,7 @@ export interface EditionView {
 	id: string;
 	date: string;
 	issueNumber: number;
+	closedAt: Date | null;
 	categories: EditionCategoryView[];
 	totalCount: number;
 	readCount: number;
@@ -96,6 +97,7 @@ export async function getEditionView(editionId: string): Promise<EditionView | n
 		id: edition.id,
 		date: edition.date,
 		issueNumber: edition.issueNumber,
+		closedAt: edition.closedAt,
 		categories,
 		totalCount: rows.length,
 		readCount,

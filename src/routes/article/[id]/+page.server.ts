@@ -26,6 +26,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			feedId: feeds.id,
 			editionUserId: editions.userId,
 			editionDate: editions.date,
+			editionClosedAt: editions.closedAt,
 			issueNumber: editions.issueNumber
 		})
 		.from(editionArticles)
@@ -47,7 +48,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.limit(1);
 
 	const isLatest = latestEdition && latestEdition.date === row.editionDate;
-	const backUrl = isLatest ? '/' : `/archive/${row.editionDate}`;
+	const backUrl = isLatest && !row.editionClosedAt ? '/' : `/archive/${row.editionDate}`;
 
 	return {
 		editionArticleId: row.editionArticleId,

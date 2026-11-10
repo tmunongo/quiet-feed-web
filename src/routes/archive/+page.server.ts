@@ -1,8 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { eq, desc } from 'drizzle-orm';
 import { db } from '$lib/server/db';
-import { editions, editionArticles } from '$lib/server/db/schema';
-import { sql } from 'drizzle-orm';
+import { editions } from '$lib/server/db/schema';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -12,14 +11,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.select({
 			id: editions.id,
 			date: editions.date,
-			issueNumber: editions.issueNumber,
-			articleCount: sql<number>`count(${editionArticles.id})`,
-			readCount: sql<number>`sum(case when ${editionArticles.read} then 1 else 0 end)`
+			issueNumber: editions.issueNumber
 		})
 		.from(editions)
-		.leftJoin(editionArticles, eq(editionArticles.editionId, editions.id))
 		.where(eq(editions.userId, locals.user.id))
-		.groupBy(editions.id)
 		.orderBy(desc(editions.date));
 
 	return { editions: rows };

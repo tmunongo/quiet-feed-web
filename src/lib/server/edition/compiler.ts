@@ -1,6 +1,6 @@
 // The edition compiler is the core ritual of Quiet Feed: it fetches every
-// subscribed feed once, caps how many articles any single feed can
-// contribute, and freezes the result into one immutable "Edition" row.
+// subscribed feed once, shares a whole-edition budget across per-feed caps,
+// and freezes the result into one immutable "Edition" row.
 // Once compiled, an edition never changes shape — re-reading it tomorrow
 // shows exactly what it showed today.
 import { randomUUID } from 'node:crypto';
@@ -68,8 +68,8 @@ function effectiveCap(feed: Feed, defaultCap: number): number {
 
 /**
  * Fetches all of a user's feeds, then freezes a new Edition: per feed, takes
- * up to its article cap of the newest not-yet-included articles, ordered
- * newest-first within each feed, grouped by category for display.
+ * up to its article cap of the newest not-yet-included articles, then shares
+ * the whole-edition budget round-robin across sources. Display groups by category.
  */
 export async function compileEdition(userId: string): Promise<{ editionId: string; articleCount: number }> {
 	const settings = await getOrCreateUserSettings(userId);
@@ -99,64 +99,68 @@ export async function compileEdition(userId: string): Promise<{ editionId: strin
 		return { editionId: existingLate.id, articleCount: 0 };
 	}
 
-	const userFeeds = await db.select().from(feeds).where(eq(feeds.userId, userId));
+	const userFeeds = await db.select().from(feeds).where(eq(feeds.userId, userId)).orderBy(feeds.id);
 
 	const [{ count: priorEditions }] = await db
 		.select({ count: sql<number>`count(*)` })
 		.from(editions)
 		.where(eq(editions.userId, userId));
 
-	const editionId = randomUUID();
-	try {
-		await db.insert(editions).values({
-			id: editionId,
-			userId,
-			date: today,
-			issueNumber: priorEditions + 1,
-			createdAt: new Date()
-		});
-	} catch (err) {
-		const [existing] = await db
-			.select({ id: editions.id })
-			.from(editions)
-			.where(and(eq(editions.userId, userId), eq(editions.date, today)))
-			.limit(1);
-		if (existing) {
-			return { editionId: existing.id, articleCount: 0 };
-		}
-		throw err;
-	}
-
-	let position = 0;
-	let totalArticles = 0;
-
+	// Gather newest, never-shown candidates per source before freezing the edition.
+	const candidates: { id: string }[][] = [];
 	for (const feed of userFeeds) {
-		const cap = effectiveCap(feed, settings.defaultArticleCap);
-
-		// Articles for this feed that have never appeared in any prior
-		// edition, newest first, capped — this is what keeps a high-volume
-		// feed from drowning out a low-volume one, and keeps editions from
-		// re-showing yesterday's stories.
-		const candidateArticles = await db
+		const rows = await db
 			.select({ id: articles.id })
 			.from(articles)
 			.leftJoin(editionArticles, eq(editionArticles.articleId, articles.id))
 			.where(and(eq(articles.feedId, feed.id), sql`${editionArticles.id} IS NULL`))
-			.orderBy(desc(articles.publishedAt))
-			.limit(cap);
-
-		for (const { id: articleId } of candidateArticles) {
-			await db.insert(editionArticles).values({
-				id: randomUUID(),
-				editionId,
-				articleId,
-				position: position++
-			});
-			totalArticles++;
-		}
+			.orderBy(desc(articles.publishedAt), desc(articles.fetchedAt), articles.id)
+			.limit(Math.min(effectiveCap(feed, settings.defaultArticleCap), settings.editionArticleCap));
+		if (rows.length) candidates.push(rows);
 	}
 
-	await db.update(userSettings).set({ lastEditionDate: today }).where(eq(userSettings.userId, userId));
+	// One story per source per round. Rotate the first eligible source so small
+	// editions don't always favour the same feeds when there are more sources than slots.
+	const selected: { id: string }[] = [];
+	const start = candidates.length ? priorEditions % candidates.length : 0;
+	for (let round = 0; selected.length < settings.editionArticleCap; round++) {
+		let added = false;
+		for (let offset = 0; offset < candidates.length && selected.length < settings.editionArticleCap; offset++) {
+			const article = candidates[(start + offset) % candidates.length][round];
+			if (article) {
+				selected.push(article);
+				added = true;
+			}
+		}
+		if (!added) break;
+	}
+
+	const editionId = randomUUID();
+	try {
+		// Publish the edition and its contents together: readers never see a
+		// partially assembled edition, even if another request compiles concurrently.
+		db.transaction((tx) => {
+			tx.insert(editions).values({
+				id: editionId,
+				userId,
+				date: today,
+				issueNumber: priorEditions + 1,
+				createdAt: new Date()
+			}).run();
+			for (const [position, article] of selected.entries()) {
+				tx.insert(editionArticles).values({
+					id: randomUUID(), editionId, articleId: article.id, position
+				}).run();
+			}
+			tx.update(userSettings).set({ lastEditionDate: today }).where(eq(userSettings.userId, userId)).run();
+		});
+	} catch (err) {
+		const [existing] = await db.select({ id: editions.id }).from(editions)
+			.where(and(eq(editions.userId, userId), eq(editions.date, today))).limit(1);
+		if (existing) return { editionId: existing.id, articleCount: 0 };
+		throw err;
+	}
+	const totalArticles = selected.length;
 
 	if (settings.aiDigestEnabled && settings.aiDigestTrigger === 'auto' && settings.geminiApiKey) {
 		generateAndSaveEditionSummary(editionId, userId).catch((err) => {

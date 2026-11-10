@@ -1,7 +1,5 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/fraunces';
-@import '@fontsource/source-serif-4';
-@import '@fontsource/source-serif-4/400-italic.css';
 @import '@fontsource/jetbrains-mono';
 
 /*
@@ -10,15 +8,14 @@
 	Quiet Feed's signature is "the seal" — a postmark-style stamp that marks
 	an edition as sealed/closed, echoing airmail envelope stripes rather than
 	a newspaper masthead. Three deliberately distinct type roles: Fraunces
-	(display, wonky/characterful, used sparingly), Source Serif 4 (reading
-	body), JetBrains Mono (dateline/metadata — the "stamped" utility voice).
+	(serif headings), system sans serif (reading body), JetBrains Mono (dateline/metadata — the "stamped" utility voice).
 	Palette is a cool archival-paper grey, not the cream/terracotta combo
 	that's become the default "AI editorial" look.
 */
 
 @theme {
-	--font-display: 'Fraunces Variable', 'Source Serif 4', serif;
-	--font-body: 'Source Serif 4', Georgia, serif;
+	--font-display: 'Fraunces Variable', Georgia, serif;
+	--font-body: var(--font-sans);
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
 	/* Light mode — archival ledger paper, not cream */
@@ -73,6 +70,11 @@
 		font-family: var(--font-body);
 		-webkit-font-smoothing: antialiased;
 		text-rendering: optimizeLegibility;
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		font-family: var(--font-display);
+		font-optical-sizing: auto;
 	}
 
 	::selection {

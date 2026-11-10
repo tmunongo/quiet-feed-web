@@ -10,7 +10,7 @@ on:
 
 jobs:
   check:
-    name: Typecheck & Build
+    name: Typecheck, Test & Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,6 +26,9 @@ jobs:
 
       - name: Run svelte-check
         run: bun run check
+
+      - name: Test edition behavior
+        run: bun test
 
       - name: Build
         run: bun run build

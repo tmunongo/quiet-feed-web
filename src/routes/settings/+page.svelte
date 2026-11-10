@@ -18,6 +18,7 @@
 	let defaultArticleCap = $state(
 		untrack(() => data.settings?.defaultArticleCap ?? 15),
 	);
+	let editionArticleCap = $state(untrack(() => data.settings?.editionArticleCap ?? 20));
 	let habitsMode = $state(untrack(() => data.settings?.habitsMode ?? false));
 
 	let aiDigestEnabled = $state(
@@ -141,6 +142,7 @@
 					timezone = data.settings.timezone;
 					theme = data.settings.theme;
 					defaultArticleCap = data.settings.defaultArticleCap;
+					editionArticleCap = data.settings.editionArticleCap;
 					habitsMode = data.settings.habitsMode;
 					aiDigestEnabled = data.settings.aiDigestEnabled;
 					aiDigestTrigger = data.settings.aiDigestTrigger;
@@ -200,6 +202,18 @@
 					</label>
 				{/each}
 			</div>
+		</label>
+
+		<label class="flex flex-col gap-1.5">
+			<span class="text-dateline">Maximum articles per edition</span>
+			<input type="number" name="editionArticleCap" min="1" max="100" step="1" required bind:value={editionArticleCap}
+				class="w-24 rounded-sm border px-3 py-2 text-sm"
+				style="background-color: var(--color-paper-raised); border-color: var(--color-line); color: var(--color-ink);" />
+			<span class="text-xs" style="color: var(--color-ink-faint);">
+				A limit for the whole edition, shared across your feeds. We take turns between sources,
+				starting with a different source each edition. Stories are selected newest first within each feed;
+				those left out may appear in a later edition. Changes apply to future editions.
+			</span>
 		</label>
 
 		<label class="flex flex-col gap-1.5">

@@ -1,7 +1,7 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { feeds } from '$lib/server/db/schema';
-import { eq, count } from 'drizzle-orm';
+import { feeds, editions } from '$lib/server/db/schema';
+import { eq, count, and } from 'drizzle-orm';
 import { getOrCompileTodaysEdition, hasEditionForToday, compileEdition } from '$lib/server/edition/compiler';
 import { getEditionView } from '$lib/server/edition/view';
 import { getOrCreateUserSettings } from '$lib/server/db/user-settings';
@@ -47,6 +47,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
+	closeEdition: async ({ request, locals }) => {
+		if (!locals.user) throw redirect(302, '/login');
+
+		const data = await request.formData();
+		const editionId = data.get('editionId');
+		if (typeof editionId !== 'string' || !editionId) {
+			return fail(400, { message: 'Choose an edition to close.' });
+		}
+
+		const [closed] = await db.update(editions)
+			.set({ closedAt: new Date() })
+			.where(and(eq(editions.id, editionId), eq(editions.userId, locals.user.id)))
+			.returning({ id: editions.id });
+		if (!closed) return fail(404, { message: 'Edition not found.' });
+
+		return { success: true };
+	},
 	fetchNow: async ({ locals }) => {
 		if (!locals.user) throw redirect(302, '/login');
 

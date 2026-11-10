@@ -35,7 +35,8 @@
 	}
 
 	let isSealed = $derived(
-		!!data.edition && data.edition.totalCount > 0 && data.edition.readCount === data.edition.totalCount
+		!!data.edition && (!!data.edition.closedAt ||
+			(data.edition.totalCount > 0 && data.edition.readCount === data.edition.totalCount))
 	);
 </script>
 
@@ -98,7 +99,7 @@
 				<h1 class="font-display text-3xl" style="color: var(--color-ink);">Today's edition</h1>
 				{#if data.edition && data.edition.totalCount > 0}
 					<p class="mt-2 text-sm" style="color: var(--color-ink-faint);">
-						{data.edition.readCount} of {data.edition.totalCount} read
+						{data.edition.totalCount} articles · Read what interests you.
 					</p>
 				{/if}
 			</div>
@@ -107,7 +108,7 @@
 			{/if}
 		</header>
 
-		{#if data.edition && data.edition.totalCount > 0}
+		{#if data.edition && data.edition.totalCount > 0 && !isSealed}
 			<DailyDispatch
 				summary={data.edition.summary}
 				canGenerate={data.aiDigestEnabled &&
@@ -124,11 +125,14 @@
 			<div class="flex flex-col items-center py-20 text-center">
 				<Seal issueNumber={data.edition.issueNumber} dateLabel={dateLabel(data.edition.date)} size={150} />
 				<h2 class="font-display mt-8 text-2xl" style="color: var(--color-ink);">
-					Edition closed for today.
+					That’s enough for today.
 				</h2>
 				<p class="mt-2 text-sm" style="color: var(--color-ink-soft);">
 					Next edition arrives tomorrow at {data.editionTime}.
 				</p>
+				<a href="/archive/{data.edition.date}" class="mt-6 text-sm underline" style="color: var(--color-ink-soft);">
+					Revisit this edition
+				</a>
 			</div>
 		{:else if data.edition && data.edition.totalCount === 0}
 			<div class="flex flex-col items-center py-20 text-center">
@@ -139,6 +143,18 @@
 				</p>
 			</div>
 		{:else if data.edition}
+			<div class="mb-8 flex flex-col items-start gap-2">
+				<form method="POST" action="?/closeEdition" use:enhance>
+					<input type="hidden" name="editionId" value={data.edition.id} />
+					<button type="submit" class="font-mono-tight rounded-sm border px-4 py-2 text-xs uppercase tracking-wide" style="border-color: var(--color-line); color: var(--color-ink-soft);">
+						Close today’s edition
+					</button>
+				</form>
+				<p class="text-xs" style="color: var(--color-ink-faint);">You can stop here. All articles stay available in the archive.</p>
+				{#if form?.message}
+					<p role="alert" class="text-sm" style="color: var(--color-stamp);">{form.message}</p>
+				{/if}
+			</div>
 			<div class="flex flex-col gap-8">
 				{#each data.edition.categories as cat}
 					{@const isCollapsed = collapsed.has(cat.category)}
@@ -163,7 +179,7 @@
 											class="block"
 											style="opacity: {article.read ? '0.55' : '1'};"
 										>
-											<h3 class="font-body text-lg leading-snug" style="color: var(--color-ink);">
+											<h3 class="font-display text-lg leading-snug" style="color: var(--color-ink);">
 												{article.title}
 											</h3>
 											<p class="text-dateline mt-1.5">

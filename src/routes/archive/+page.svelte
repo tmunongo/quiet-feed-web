@@ -15,6 +15,7 @@
 	<header class="mb-8">
 		<p class="text-dateline mb-1">Back issues</p>
 		<h1 class="font-display text-2xl" style="color: var(--color-ink);">Archive</h1>
+		<p class="mt-2 text-sm" style="color: var(--color-ink-soft);">Past editions are here whenever you want them. There’s no catching up to do.</p>
 	</header>
 
 	{#if !data.editions?.length}
@@ -28,9 +29,6 @@
 							<p class="font-body text-lg" style="color: var(--color-ink);">Issue №{edition.issueNumber}</p>
 							<p class="text-dateline mt-1">{formatDate(edition.date)}</p>
 						</div>
-						<p class="font-mono-tight text-sm" style="color: var(--color-ink-faint);">
-							{edition.readCount ?? 0}/{edition.articleCount}
-						</p>
 					</a>
 				</li>
 			{/each}

@@ -17,9 +17,10 @@ specific idea than "newspaper," and it suggested a more specific visual language
 ## The signature device: the Seal
 
 Instead of a masthead, Quiet Feed's signature mark is a postmark-style stamp — "the Seal"
-(`src/lib/components/Seal.svelte`) — that appears once an edition is fully read and closed
-for the day. It's deliberately not a perfect circle (slight rotation, a faint double ring)
-to read as hand-stamped rather than vector-perfect. It's the one place in the UI that's
+(`src/lib/components/Seal.svelte`) — that appears once an edition is closed
+for the day, either by choice or after reading every article. It's deliberately not a
+perfect circle (slight rotation, a faint double ring) to read as hand-stamped rather
+than vector-perfect. It's the one place in the UI that's
 allowed to be a little theatrical; everything else stays quiet on purpose.
 
 The accent palette follows from the same idea — airmail envelope stripes (the red-and-blue
@@ -33,8 +34,10 @@ the reading-progress bar in airmail-blue) without it reading as "the app's brand
   Seal's "№" mark. Fraunces has enough optical-size personality to carry a few large
   moments without needing decoration around it. Not Playfair Display, deliberately — that
   pairing (cream + Playfair) is exactly the combination this is trying to avoid.
-- **Source Serif 4** (body) — the actual reading face. Chosen for being a quieter,
-  more neutral serif than Fraunces, so the two don't compete inside a single screen.
+- **System sans serif** (body) — article text, summaries, and general interface copy
+  use the platform’s native sans serif through Tailwind’s shared sans stack. This keeps
+  reading text familiar and separates it clearly from the serif headings, without an
+  additional font download.
 - **JetBrains Mono** (utility/"dateline") — issue numbers, timestamps, feed names, form
   labels. The conceit: a postmark or ledger stamp is typewritten, not hand-lettered, so the
   "metadata voice" of the app borrows that register. This is also what gives the UI most of
@@ -62,5 +65,6 @@ No bordered cards, no dense multi-column broadsheet grid (the other newspaper cl
 naming and avoiding deliberately). Articles are separated by a single hairline rule, full
 width, generous vertical rhythm — closer to a well-set reading list than a newspaper page
 layout. The one deliberately "designed" moment is the closed-edition state: a large Seal,
-centered, with nothing else competing for attention — the calm payoff for finishing a day's
-reading, instead of a badge count resetting to zero.
+centered, with nothing else competing for attention — a quiet stopping point whenever
+someone has had enough reading. Closing an edition does not mark its remaining articles read; the archive keeps them available without
+completion counts.

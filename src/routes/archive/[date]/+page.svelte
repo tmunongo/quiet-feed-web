@@ -47,7 +47,7 @@
 						{#each cat.articles as article, i}
 							<li class="rule py-3" class:border-0={i === 0}>
 								<a href="/article/{article.editionArticleId}" style="opacity: {article.read ? '0.55' : '1'};">
-									<h3 class="font-body text-lg leading-snug" style="color: var(--color-ink);">{article.title}</h3>
+									<h3 class="font-display text-lg leading-snug" style="color: var(--color-ink);">{article.title}</h3>
 									<p class="text-dateline mt-1.5">{article.feedTitle}</p>
 								</a>
 							</li>

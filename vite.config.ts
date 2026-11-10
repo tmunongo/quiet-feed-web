@@ -2,8 +2,18 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import { defineConfig } from 'vite';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+
+// Vite 5 tracks bun.lockb but not Bun’s text lockfile. Give each dependency
+// set its own cache so a new Svelte compiler cannot reuse an older runtime.
+const dependencyHash = createHash('sha256')
+	.update(readFileSync(new URL('./bun.lock', import.meta.url)))
+	.digest('hex')
+	.slice(0, 16);
 
 export default defineConfig({
+	cacheDir: `node_modules/.vite/${dependencyHash}`,
 	plugins: [
 		tailwindcss(),
 		sveltekit(),

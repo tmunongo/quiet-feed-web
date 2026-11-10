@@ -47,6 +47,7 @@ export const actions: Actions = {
 		const theme = data.get('theme') as 'system' | 'light' | 'dark';
 		const habitsMode = data.get('habitsMode') === 'on';
 		const defaultArticleCap = parseInt((data.get('defaultArticleCap') as string) || '15', 10);
+		const editionArticleCap = Number(data.get('editionArticleCap'));
 
 		const aiDigestEnabled = data.get('aiDigestEnabled') === 'on';
 
@@ -68,6 +69,9 @@ export const actions: Actions = {
 
 		if (!/^\d{2}:\d{2}$/.test(editionTime)) {
 			return fail(400, { message: 'Edition time must be in HH:MM format.' });
+		}
+		if (!Number.isInteger(editionArticleCap) || editionArticleCap < 1 || editionArticleCap > 100) {
+			return fail(400, { message: 'Edition size must be a whole number between 1 and 100.' });
 		}
 		if (defaultArticleCap < 5 || defaultArticleCap > 50) {
 			return fail(400, { message: 'Article cap must be between 5 and 50.' });
@@ -100,6 +104,7 @@ export const actions: Actions = {
 				theme,
 				habitsMode,
 				defaultArticleCap,
+				editionArticleCap,
 				geminiApiKey: finalApiKeyCipher,
 				aiModel,
 				aiDigestEnabled: finalApiKeyCipher ? aiDigestEnabled : false,

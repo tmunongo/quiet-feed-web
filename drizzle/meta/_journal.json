@@ -15,6 +15,13 @@
       "when": 1793901838464,
       "tag": "0001_fixed_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794331363224,
+      "tag": "0002_flippant_red_hulk",
+      "breakpoints": true
     }
   ]
 }

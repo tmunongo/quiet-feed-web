@@ -76,6 +76,8 @@ export const userSettings = sqliteTable('user_settings', {
 	habitsMode: integer('habits_mode', { mode: 'boolean' }).notNull().default(false),
 	// Default per-feed article cap, overridable per feed.
 	defaultArticleCap: integer('default_article_cap').notNull().default(15),
+	// Maximum articles across all feeds in a daily edition.
+	editionArticleCap: integer('edition_article_cap').notNull().default(20),
 	// ISO date (YYYY-MM-DD) of the most recently compiled edition.
 	lastEditionDate: text('last_edition_date'),
 	// JSON array of category names the user has collapsed.
@@ -149,7 +151,9 @@ export const editions = sqliteTable(
 			.references(() => user.id, { onDelete: 'cascade' }),
 		date: text('date').notNull(), // YYYY-MM-DD, in the user's timezone
 		issueNumber: integer('issue_number').notNull(),
-		createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+		createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+		// Closing an edition is independent of reading every article.
+		closedAt: integer('closed_at', { mode: 'timestamp' })
 	},
 	(table) => [unique('editions_user_date_unique').on(table.userId, table.date)]
 );
