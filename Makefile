@@ -11,10 +11,10 @@ check:
 	uv run ruff format --check .
 
 bump-patch:
-	uv version --bump patch
+	uv run --locked python scripts/bump_version.py patch
 
 bump-minor:
-	uv version --bump minor
+	uv run --locked python scripts/bump_version.py minor
 
 bump-major:
-	uv version --bump major
+	uv run --locked python scripts/bump_version.py major

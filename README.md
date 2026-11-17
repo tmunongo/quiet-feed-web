@@ -214,7 +214,18 @@ through `quiet_feed.migrate` so they receive a backup before pending migrations.
 CI runs Python checks, browser behavior checks, and an ARM64 container rehearsal
 covering fresh installation and every Drizzle revision. A tagged release runs the
 Python checks before publishing the existing multi-architecture image and `latest`.
-Use `uv version --bump patch` (or `minor`/`major`) to update the project and lockfile,
-commit the change, then create the corresponding `vX.Y.Z` tag when ready to release.
+From a clean working tree, `make bump-patch` (or `bump-minor`/`bump-major`) updates
+`pyproject.toml` and `uv.lock` with uv, creates a release commit, and creates the
+matching `vX.Y.Z` Git tag. It refuses an existing tag before changing any files.
+Push the commit and that tag to trigger the release workflow:
+
+```bash
+git push origin HEAD
+git push origin vX.Y.Z
+```
+
+The bump targets do not push automatically. If you already changed the version
+with `uv version`, commit those changes and tag that version rather than bumping
+it a second time. The release workflow checks that the tag matches `pyproject.toml`.
 
 See `DESIGN.md` for the visual design rationale.
