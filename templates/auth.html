@@ -1,0 +1,19 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}{{ 'Create account' if register else 'Sign in' }} — Quiet Feed{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <p class="dateline">quiet feed</p>
+  <h1>{{ 'Make room for quiet.' if register else 'Welcome back.' }}</h1>
+  <p class="muted">{{ 'One edition a day. No infinite scroll, no badges, no noise.' if register else 'Your edition is waiting.' }}</p>
+  {% if message %}<p role="alert" class="error-message">{{ message }}</p>{% endif %}
+  <form action="{{ '/register' if register else '/login' }}" method="post" class="stack">
+    {{ csrf(csrf_token) }}
+    {% if register %}<label>Name<input name="name" required maxlength="120" autocomplete="name" value="{{ name|default('') }}"></label>{% endif %}
+    <label>Email<input type="email" name="email" required maxlength="254" autocomplete="email" value="{{ email|default('') }}"></label>
+    <label>Password<input type="password" name="password" required minlength="8" maxlength="128" autocomplete="{{ 'new-password' if register else 'current-password' }}"></label>
+    <button class="button primary">{{ 'Create account' if register else 'Sign in' }}</button>
+  </form>
+  <p class="small muted">{{ 'Already have an account?' if register else 'New to Quiet Feed?' }} <a href="{{ '/login' if register else '/register' }}">{{ 'Sign in' if register else 'Create an account' }}</a></p>
+</div>
+{% endblock %}

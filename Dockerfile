@@ -1,46 +1,30 @@
 # syntax=docker/dockerfile:1
-FROM oven/bun:1 AS dependencies
+FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
+FROM python:3.12-slim-bookworm AS runtime
+
+COPY --from=uv /uv /usr/local/bin/uv
 WORKDIR /app
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never \
+    PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH" HOST=0.0.0.0 PORT=3000
 
-COPY package.json bun.lock ./
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --frozen-lockfile
+COPY pyproject.toml uv.lock .python-version ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --no-install-project
 
-FROM oven/bun:1 AS production-dependencies
-WORKDIR /app
-COPY package.json bun.lock ./
-# Runtime peers (SvelteKit, Svelte, Drizzle) are explicit dependencies.
-# Skip automatically installed peers such as Vite and Drizzle Kit.
-RUN --mount=type=cache,target=/root/.bun/install/cache \
-    bun install --production --omit=peer --frozen-lockfile
-
-FROM dependencies AS build
-COPY . .
-# Release metadata changes must not invalidate dependency installation.
-ARG COMMIT_HASH
-ARG APP_VERSION
-ENV COMMIT_HASH=${COMMIT_HASH}
-ENV APP_VERSION=${APP_VERSION}
-RUN BETTER_AUTH_SECRET=quiet-feed-build-dummy-secret-at-least-32-chars bun --bun vite build
-
-FROM oven/bun:1-slim AS runtime
-WORKDIR /app
-ENV NODE_ENV=production
+COPY quiet_feed ./quiet_feed
+COPY templates ./templates
+COPY static ./static
+COPY migrations ./migrations
+COPY drizzle ./drizzle
+COPY alembic.ini ./alembic.ini
 
 ARG COMMIT_HASH
 ARG APP_VERSION
-ENV COMMIT_HASH=${COMMIT_HASH}
-ENV APP_VERSION=${APP_VERSION}
-
-COPY --from=build /app/build ./build
-COPY --from=build /app/drizzle ./drizzle
-COPY --from=build /app/scripts ./scripts
-COPY --from=build /app/package.json ./package.json
-COPY --from=production-dependencies /app/node_modules ./node_modules
-
-# Database lives on a volume so it survives image rebuilds/redeploys.
-VOLUME ["/app/data"]
+ENV COMMIT_HASH=${COMMIT_HASH} APP_VERSION=${APP_VERSION}
 ENV DATABASE_PATH=/app/data/quiet-feed.db
-
+VOLUME ["/app/data"]
 EXPOSE 3000
-CMD ["sh", "-c", "bun ./scripts/migrate.js && exec bun ./build/index.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD ["python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','3000')+'/healthz',timeout=4)"]
+CMD ["python", "-m", "quiet_feed"]

@@ -1,0 +1,3 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% block title %}Quiet Feed{% endblock %}
+{% block content %}<div class="page empty-state"><h1>Something needs your attention.</h1><p role="alert">{{ message }}</p><a href="/">Back to your edition</a></div>{% endblock %}

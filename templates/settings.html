@@ -1,0 +1,30 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Settings — Quiet Feed{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-heading"><p class="dateline">Your rhythm</p><h1>Settings</h1><p class="muted">Make Quiet Feed fit your day.</p></header>
+  {% if message %}<p role="status" class="{{ 'error-message' if error else 'notice' }}">{{ message }}</p>{% elif request.query_params.get('saved') %}<p class="notice" role="status">Settings saved.</p>{% endif %}
+  <form action="/settings" method="post" class="stack" hx-post="/settings" hx-target="#main" hx-swap="outerHTML">
+    {{ csrf(csrf_token) }}
+    <section class="settings-section stack"><h2>Daily edition</h2>
+      <div class="form-grid"><label>Edition time<input type="time" name="editionTime" value="{{ settings.edition_time }}" required></label><label>Timezone<select name="timezone" required>{% for zone in timezones %}<option value="{{ zone }}" {% if zone == settings.timezone %}selected{% endif %}>{{ zone }}</option>{% endfor %}</select></label></div>
+      <label>Articles per edition<input type="number" name="editionArticleCap" min="1" max="100" value="{{ settings.edition_article_cap }}" required><span class="field-help">Across all sources, shared fairly. Existing editions stay as they are.</span></label>
+      <label>Default per-feed article cap<input type="number" name="defaultArticleCap" min="5" max="50" value="{{ settings.default_article_cap }}" required><span class="field-help">Individual feeds can override this limit.</span></label>
+      <label class="checkbox"><input type="checkbox" name="habitsMode" {% if settings.habits_mode %}checked{% endif %}><span>Habits mode<span class="field-help">Hide manual fetching and let your daily edition arrive on its own.</span></span></label>
+    </section>
+    <section class="settings-section stack"><h2>Appearance</h2><label>Theme<select name="theme">{% for theme, label in [('system','Follow system'), ('light','Light'), ('dark','Dark')] %}<option value="{{ theme }}" {% if theme == settings.theme %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></section>
+    <section class="settings-section stack"><h2>The Morning Dispatch</h2><p class="muted small">An optional daily overview of your edition, using your Google Gemini API key.</p>
+      <label class="checkbox"><input type="checkbox" name="aiDigestEnabled" {% if settings.ai_digest_enabled %}checked{% endif %}><span>Enable AI daily digests</span></label>
+      {% if masked_key %}<p class="small muted">Saved key: {{ masked_key }}</p>{% endif %}
+      {% if key_error %}<p class="error-message">The saved key could not be decrypted. Keep the original BETTER_AUTH_SECRET or ENCRYPTION_KEY, or replace the saved key below.</p>{% endif %}
+      <label>Google Gemini API key<input type="password" name="geminiApiKey" autocomplete="off" placeholder="{{ 'Leave blank to keep your saved key' if settings.gemini_api_key else 'Enter your API key' }}"><span class="field-help">Encrypted on your server. Never sent to your browser after saving.</span></label>
+      <div><button class="button small" type="submit" formaction="/settings/test-key" hx-post="/settings/test-key" hx-target="#key-test-result" hx-swap="innerHTML" formnovalidate>Test API key</button><div id="key-test-result" role="status"></div></div>
+      {% if settings.gemini_api_key %}<label class="checkbox"><input type="checkbox" name="removeGeminiKey" value="true"><span>Remove saved API key</span></label>{% endif %}
+      <label>Model<select name="aiModel">{% for model in models %}<option value="{{ model }}" {% if model == settings.ai_model %}selected{% endif %}>{{ model }}</option>{% endfor %}</select></label>
+      <label>Generate dispatch<select name="aiDigestTrigger"><option value="manual" {% if settings.ai_digest_trigger == 'manual' %}selected{% endif %}>When I ask</option><option value="auto" {% if settings.ai_digest_trigger == 'auto' %}selected{% endif %}>Automatically with each edition</option></select></label>
+    </section>
+    <button class="button primary">Save settings</button>
+  </form>
+</div>
+{% endblock %}

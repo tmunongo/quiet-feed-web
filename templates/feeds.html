@@ -1,0 +1,29 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Feeds — Quiet Feed{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-heading"><p class="dateline">Your sources</p><h1>Feeds</h1><p class="muted">A few good sources. One quiet edition.</p></header>
+  {% if message %}<p role="status" class="{{ 'error-message' if error else 'notice' }}">{{ message }}</p>{% endif %}
+  <section class="settings-section"><h2>Add a feed</h2><form action="/feeds/add" method="post" class="stack" hx-post="/feeds/add" hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button">
+    {{ csrf(csrf_token) }}<label>Feed URL<input type="url" name="url" placeholder="https://example.com/feed" required></label>
+    <label>Category<input name="category" value="General" list="categories"></label><button class="button primary">Add feed</button>
+  </form></section>
+  <datalist id="categories">{% for category in feeds|map(attribute='category')|unique %}<option value="{{ category }}">{% endfor %}</datalist>
+  {% if not feeds %}<div class="empty-state compact"><p class="muted">No feeds yet. Add your own, import an OPML file, or start with a few suggestions.</p><form method="post" action="/feeds/starter" hx-post="/feeds/starter" hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button">{{ csrf(csrf_token) }}<button class="button">Add starter feeds</button></form></div>{% endif %}
+  {% for group in feeds|groupby('category') %}
+  <section class="category"><h2 class="category-heading">{{ group.grouper }}</h2><ul class="feed-list">
+    {% for feed in group.list %}<li x-data="{ editing: false }">
+      <div class="split"><div class="feed-info"><h3>{{ feed.title }}</h3><p class="small muted break-word">{{ feed.url }}</p>{% if feed.article_cap %}<p class="dateline">Up to {{ feed.article_cap }} articles per edition</p>{% endif %}{% if feed.last_fetch_error %}<p class="small error-message">{{ feed.last_fetch_error }}</p>{% endif %}</div><button type="button" class="link-button" @click="editing = !editing" :aria-expanded="editing">Edit</button></div>
+      <div x-show="editing" x-cloak class="feed-editor">
+        <form action="/feeds/update" method="post" class="stack" hx-post="/feeds/update" hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button">{{ csrf(csrf_token) }}<input type="hidden" name="id" value="{{ feed.id }}">
+          <label>Title<input name="title" value="{{ feed.title }}" required></label><label>Feed URL<input type="url" name="url" value="{{ feed.url }}" required></label><label>Category<input name="category" value="{{ feed.category }}" list="categories"></label><label>Article cap <span class="muted">(blank uses your default)</span><input type="number" name="articleCap" min="1" max="100" value="{{ feed.article_cap or '' }}"></label><button class="button">Save changes</button>
+        </form>
+        <form action="/feeds/delete" method="post" hx-post="/feeds/delete" hx-target="#main" hx-swap="outerHTML" hx-confirm="Remove this feed? Its articles will also be removed from past editions.">{{ csrf(csrf_token) }}<input type="hidden" name="id" value="{{ feed.id }}"><button class="button danger">Remove feed</button></form>
+      </div>
+    </li>{% endfor %}
+  </ul></section>
+  {% endfor %}
+  <section class="settings-section"><h2>Bring your subscriptions</h2><p class="muted small">Import or export OPML to move between feed readers.</p><form action="/feeds/import" method="post" enctype="multipart/form-data" class="stack" hx-post="/feeds/import" hx-target="#main" hx-swap="outerHTML" hx-encoding="multipart/form-data">{{ csrf(csrf_token) }}<label>OPML file<input type="file" name="opml" accept=".opml,.xml,text/xml,application/xml" required></label><div class="actions"><button class="button">Import OPML</button><a href="/feeds/export">Export subscriptions ↓</a></div></form></section>
+</div>
+{% endblock %}

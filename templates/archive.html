@@ -1,0 +1,9 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% block title %}Archive — Quiet Feed{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-heading"><p class="dateline">Back issues</p><h1>Archive</h1><p class="muted">Past editions are here whenever you want them. There’s no catching up to do.</p></header>
+  {% if not issues %}<p class="muted">No editions have been sealed yet.</p>{% endif %}
+  <ul class="story-list archive-list">{% for issue in issues %}<li><a href="/archive/{{ issue.date }}"><h2>Issue №{{ issue.issue_number }}</h2><p class="dateline">{{ issue.date|date_label('%A, %d %B %Y') }}</p></a></li>{% endfor %}</ul>
+</div>
+{% endblock %}

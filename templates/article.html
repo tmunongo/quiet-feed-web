@@ -1,0 +1,17 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}{{ article.title }} — Quiet Feed{% endblock %}
+{% block content %}
+<div class="reading-progress" aria-hidden="true"><div id="progress-bar" style="width: {{ progress.scroll_percent }}%"></div></div>
+<div class="reader" data-reader data-progress-id="{{ progress.id }}" data-scroll-percent="{{ progress.scroll_percent }}" data-scroll-offset="{{ progress.scroll_offset }}" data-read="{{ 'true' if progress.read else 'false' }}">
+  <a class="back-link" href="{{ back_url }}">← Back to edition</a>
+  <header class="page-heading"><p class="dateline">{{ feed.title }}{% if article.published_at %} · {{ article.published_at|date_label('%d %b %Y') }}{% endif %}</p><h1>{{ article.title }}</h1>{% if article.author %}<p class="muted">By {{ article.author }}</p>{% endif %}</header>
+  {% if content %}<article class="article-body" hx-disable x-ignore>{{ content|safe }}</article>
+  {% else %}<p>{{ article.excerpt or 'This feed provides a headline only.' }}</p><p class="muted">Read the full article at its source.</p>{% endif %}
+  <div class="reader-actions">
+    <button type="button" class="button" id="toggle-read" aria-pressed="{{ 'true' if progress.read else 'false' }}">{{ 'Mark unread' if progress.read else 'Mark as read' }}</button>
+    {% if article.url.startswith(('http://', 'https://')) %}<a href="{{ article.url }}" target="_blank" rel="noopener noreferrer">Open original ↗</a>{% endif %}
+  </div>
+</div>
+<a class="floating-back" href="{{ back_url }}" aria-label="Back to edition">← <span>Back to edition</span></a>
+{% endblock %}

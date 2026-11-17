@@ -1,97 +1,112 @@
 # Quiet Feed
 
-[![CI](https://github.com/tmunongo/quiet-feed-web/actions/workflows/ci.yml/badge.svg)](https://github.com/tmunongo/quiet-feed-web/actions/workflows/ci.yml)
-[![Build and Release](https://github.com/tmunongo/quiet-feed-web/actions/workflows/release.yml/badge.svg)](https://github.com/tmunongo/quiet-feed-web/actions/workflows/release.yml)
-[![GitHub release](https://img.shields.io/github/v/release/tmunongo/quiet-feed-web)](https://github.com/tmunongo/quiet-feed-web/releases/latest)
-[![Docker Image](https://img.shields.io/badge/ghcr.io-quiet--feed--web-blue?logo=docker)](https://github.com/tmunongo/quiet-feed-web/pkgs/container/quiet-feed-web)
-[![Built with Bun](https://img.shields.io/badge/runtime-Bun-black?logo=bun)](https://bun.sh)
-[![SvelteKit](https://img.shields.io/badge/framework-SvelteKit-ff3e00?logo=svelte)](https://kit.svelte.dev)
+One frozen daily edition of your feeds. No infinite scroll, badges, or catch-up requirement.
 
-I built this to combat information overload. Between [Hackernews](https://news.ycombinator.com), and the countless [Substack](https://substack.com) newsletters I am subscribed to, I honestly can't keep up. Yet, I constantly feel like I am missing out. I know there are so many RSS feed readers out there, but this [post](https://www.terrygodier.com/phantom-obligation) by Terry Godier had me thinking about how RSS feeders come with this implicity pressure to constantly stay on top of things. I thought RSS was a way to manage information overload and avoid being pulled down rabbit holes, but instead I just found myself obsessively refreshing my feed reader.
+Quiet Feed runs on **FastAPI, Jinja2, HTMX, Alpine.js, SQLAlchemy, and SQLite**.
+Python dependencies and Python itself are managed with **uv**. Scripts, styles, and
+fonts are served locally; no Node, Bun, frontend build, or runtime CDN is required.
 
-Quiet Feed is built around a single frozen daily "Edition" instead of an
-infinite, badge-driven feed. SvelteKit + Bun + SQLite (via `bun:sqlite`/Drizzle) + Better
-Auth, packaged as an installable PWA for offline reading of whatever edition you've already
-opened.
+## Upgrading an existing SvelteKit installation
 
-Maybe at some point I'll choose to host this for public use, but for now it's strictly BYOS (bring your own server), so host it on your own infra and enjoy.
-
-## Reading at your own pace
-
-- Editions contain at most **20 articles** by default. Change the whole-edition limit
-  (1–100) in Settings. Per-feed caps still apply; selection takes one story per source
-  per round and rotates the starting source between editions. Within each feed, newest
-  stories come first. Stories left out may appear in later editions; existing editions
-  never change when you adjust the limit.
-- **Close today’s edition** whenever you have had enough. Closing is saved separately
-  from reading progress, so unread articles stay unread. The closed screen links to the
-  full issue in the archive, and the next edition arrives as usual.
-- The archive keeps past issues available without completion counts. There is no
-  catch-up requirement.
-
-## Stack
-
-- **Runtime:** [Bun](https://bun.sh) — also used for the SQLite driver (`bun:sqlite`), no
-  native module compilation step needed.
-- **Framework:** SvelteKit 2 (Svelte 5), `svelte-adapter-bun`.
-- **Database:** SQLite via Drizzle ORM. Swappable to libSQL/Turso later without touching
-  application code, since it's all behind Drizzle's query builder.
-- **Auth:** [Better Auth](https://www.better-auth.com), email/password, Drizzle adapter.
-- **Styling:** Tailwind CSS v4 (CSS-first `@theme` config, see `src/app.css`).
-- **PWA:** `@vite-pwa/sveltekit` — installable, offline fallback for already-visited pages.
-
-## Local development
-
-Requires Bun installed (`curl -fsSL https://bun.sh/install | bash`).
+The Python release uses the **same Docker image repository, port 3000, SQLite file,
+data volume, and environment variables**. Keep your existing Compose file and secrets.
+Once the Python release is published, update the service as usual:
 
 ```bash
-bun install
-cp .env.example .env        # then edit BETTER_AUTH_SECRET at minimum
-bun run db:generate         # only needed after schema changes
-bun run db:migrate          # creates ./data/quiet-feed.db and applies schema
-bun run dev                 # http://localhost:5173
+docker compose pull quiet-feed
+docker compose up -d quiet-feed
 ```
 
-Generate a real secret instead of leaving the placeholder:
+`quiet-feed` is the Compose service name; the `:latest` image tag belongs in the
+Compose file. Pulling alone does not replace a running container.
+
+At first startup, the app verifies the Drizzle migration checksums and schema,
+creates a consistent SQLite backup under `/app/data/backups/`, adopts the matching
+Alembic revision, and applies any pending migrations. Upgrades from all three
+original Drizzle revisions and the historical Gemini 2.0 default are supported. Unknown schemas fail startup without
+altering application data. Later starts are idempotent.
+
+Your accounts, passwords, subscriptions, articles, archived editions, issue numbers,
+closed editions, reading positions, settings, and Gemini keys are retained.
+**Sign in once with your existing password** after upgrading.
+
+- Keep `BETTER_AUTH_SECRET` unchanged. Saved Gemini keys use this secret for encryption.
+- If you previously set `ENCRYPTION_KEY`, keep that value too.
+- Keep the same Compose project/service and volume mount; changing the project name
+  can select a different, empty named volume.
+- On an HTTP-only Raspberry Pi, keep `SECURE_COOKIES=false`. Use `true` with HTTPS.
+- Do not run the old and new applications against the same database simultaneously.
+
+PWA installation and offline reading are deferred. The original `/sw.js` retires
+old Workbox caches so browsers do not keep serving Svelte pages. A later release
+can add install/offline support without changing the server architecture.
+
+### Rollback
+
+Before updating, record the running image ID and image digest:
 
 ```bash
-openssl rand -hex 32        # use for BETTER_AUTH_SECRET and CRON_SECRET
+docker inspect quiet-feed --format '{{.Image}}'
+docker image inspect ghcr.io/tmunongo/quiet-feed-web:latest --format '{{json .RepoDigests}}'
 ```
 
-## Building / running in production
+Keep that image available. The migration retains the original application schema,
+password format, and Drizzle history; the previous image can reopen the database
+without dropping the Alembic tracking table. Change `image:` in your Compose file
+to the recorded digest, stop the Python container, and recreate the service.
+You will need to sign in again.
+
+If a database restore is necessary, stop the service first. Preserve the current
+database and its `-wal`/`-shm` files, then restore the selected backup as
+`quiet-feed.db` in the same volume with no old WAL/SHM files alongside it. Start
+the pinned previous image. A backup restore discards changes made after that
+backup. Do not use `docker compose down -v`; that removes persistent volumes.
+
+## Local development with uv
 
 ```bash
-bun run build
-bun run db:migrate          # idempotent — safe to run on every deploy
-bun run start               # runs build/index.js with svelte-adapter-bun
+uv sync --locked
+cp .env.example .env
+# Edit .env: set BETTER_AUTH_SECRET to a stable random secret of at least 32 characters.
+# For a NEW installation: openssl rand -hex 32
+uv run python -m quiet_feed
 ```
 
-Note the `dev`/`build`/`preview` scripts explicitly call `bun --bun vite ...` rather than
-plain `vite ...`. Without the `--bun` flag, Vite's own module resolver doesn't know how to
-resolve `bun:sqlite`-style imports (it falls back to Node-compatible resolution); the
-`--bun` flag forces Vite itself to run under Bun's runtime so those imports resolve
-correctly. This is a known Bun/Vite interaction, not a workaround specific to this project.
+The server runs at `http://localhost:3000`. Migrations run automatically before
+serving requests. To apply migrations separately:
 
-### Environment variables
+```bash
+uv run python -m quiet_feed.migrate
+```
 
-See `.env.example` for the full list with comments. The ones that actually need changing
-for a real deployment:
+The checked-in `.python-version` selects Python 3.12; uv downloads it when needed.
+Do not replace an existing `.env` or regenerate its secrets when upgrading.
 
-- `BETTER_AUTH_SECRET` — random secret, required.
-- `BETTER_AUTH_URL` and `ORIGIN` — both should be the externally reachable URL of the
-  deployment (protocol + host). If these are wrong, form submissions (login, settings,
-  adding feeds) fail same-origin checks.
-- `CRON_SECRET` — only needed if you disable `ENABLE_INTERNAL_SCHEDULER` and point an
-  external cron job at `/api/cron/compile` instead (see below).
-- `SECURE_COOKIES` — set to `true` once served over HTTPS.
+```bash
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+```
 
-### Self-Hosting with Docker Compose (Pre-built Image)
+For browser regression checks:
 
-You can run Quiet Feed using the pre-built Docker image hosted on the GitHub Container Registry (GHCR).
+```bash
+uv run playwright install chromium
+uv run python scripts/browser_smoke.py
+# Or use an already installed Chrome, with a fresh isolated test profile:
+QUIET_FEED_BROWSER_CHANNEL=chrome uv run python scripts/browser_smoke.py
+```
 
-Here is a template `compose.yml` for self-hosting. It mounts a volume for database persistence, starts the SvelteKit app on port 3000, and enables the internal scheduler for processing feeds.
+The browser script uses a temporary database and a local synthetic feed. Screenshots
+are written to ignored `test-results/`. Tests never use your account, real feeds,
+Google API, or production database.
 
-Create a `compose.yml` file:
+## Docker
+
+The published image remains `ghcr.io/tmunongo/quiet-feed-web:latest`, with
+`linux/arm64` (64-bit Raspberry Pi) and `linux/amd64` builds.
+
+For a new HTTP-only installation:
 
 ```yaml
 services:
@@ -102,114 +117,104 @@ services:
     ports:
       - "3000:3000"
     environment:
-      HOST: 0.0.0.0
-      PORT: 3000
-      # Change these to your actual domain
-      ORIGIN: https://quiet-feed.example.com
-      BETTER_AUTH_URL: https://quiet-feed.example.com
-      # Security settings
-      SECURE_COOKIES: "true"
-      # Generate random hex strings for these (e.g. openssl rand -hex 32)
-      BETTER_AUTH_SECRET: "your-better-auth-secret-here"
-      CRON_SECRET: "your-cron-secret-here"
-      # Enable internal cron scheduler
+      ORIGIN: http://raspberrypi.local:3000
+      BETTER_AUTH_SECRET: "replace-with-a-random-secret-of-at-least-32-characters"
+      SECURE_COOKIES: "false"
       ENABLE_INTERNAL_SCHEDULER: "true"
       DATABASE_PATH: /app/data/quiet-feed.db
     volumes:
       - quiet-feed-data:/app/data
-
+    stop_grace_period: 5m
 volumes:
   quiet-feed-data:
 ```
 
-To start the service:
+Set `ORIGIN` to the exact address used in your browser. For HTTPS, set the HTTPS
+origin and `SECURE_COOKIES=true`. The repository's `compose.yml` also supports
+building from source and retains its original Traefik routing/network setup:
+
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
----
+`GET /healthz` checks startup/database availability. The image includes a health
+check. One Uvicorn worker owns the scheduler and dispatch jobs. SQLite uses WAL,
+foreign keys, and a busy timeout; edition selection/publication is transactional.
 
-### Docker / local container build (Development/Homelab)
+### Configuration
 
-If you prefer to build the container from source, a `Dockerfile` and `compose.yml` are included in this repo (pre-configured for a Traefik-fronted reverse proxy).
+See `.env.example`. Existing variables remain accepted:
 
-1. Edit the domains in the environment variables and the Traefik labels in `compose.yml`.
-2. Generate your secrets:
-   ```bash
-   export BETTER_AUTH_SECRET=$(openssl rand -hex 32)
-   export CRON_SECRET=$(openssl rand -hex 32)
-   ```
-3. Run the container:
-   ```bash
-   docker compose up -d --build
-   ```
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_PATH` | Existing SQLite file; default `./data/quiet-feed.db` |
+| `BETTER_AUTH_SECRET` | Stable application secret and default encryption secret |
+| `ENCRYPTION_KEY` | Optional existing override for Gemini-key encryption |
+| `ORIGIN` | Public origin used for form submission checks |
+| `BETTER_AUTH_URL` | Fallback when `ORIGIN` is unset |
+| `SECURE_COOKIES` | `false` on HTTP; `true` on HTTPS |
+| `ENABLE_INTERNAL_SCHEDULER` | Check for due editions every ten minutes |
+| `CRON_SECRET` | Bearer secret for external compilation requests |
+| `HOST`, `PORT` | Bind address and port |
+| `FORWARDED_ALLOW_IPS` | Trusted reverse proxy IPs/CIDRs for Uvicorn |
 
-The SQLite database file is persisted in a named volume (`quiet-feed-data`). Migrations run automatically on container start.
+Legacy Bun proxy-header variables may remain in old Compose files, but Python
+does not use them. If proxy-derived client addresses are needed, explicitly set
+`FORWARDED_ALLOW_IPS` to the proxy's IP or network.
 
-If you aren't using Traefik, you can modify `compose.yml` to remove the `labels` and `networks` blocks and expose port 3000 directly:
-```yaml
-    ports:
-      - "3000:3000"
-```
+## Daily editions
 
-## How the daily edition actually gets compiled
+The scheduler checks each user's edition time in their configured IANA timezone.
+Opening the home page also compiles a due edition if one is missing, including
+after downtime. External scheduling remains available:
 
-Two mechanisms, deliberately redundant:
-
-1. **In-process scheduler** (`src/lib/server/scheduler.ts`) — checks every 10 minutes
-   whether each user's configured edition time has passed in their timezone, and compiles
-   if so. Controlled by `ENABLE_INTERNAL_SCHEDULER`. Fine for a single server instance.
-2. **On-open fallback** (`getOrCompileTodaysEdition` in `src/lib/server/edition/compiler.ts`)
-   — checked every time the home page loads. If the edition time has passed and today's
-   edition doesn't exist yet, it compiles right then. This is what guarantees an edition
-   shows up the moment someone opens the app, even if the scheduler was disabled, the
-   server was down at the scheduled time, or you're running multiple instances behind a
-   load balancer with the scheduler turned off everywhere.
-
-If you'd rather drive compilation from outside the app (systemd timer, cron, a cloud
-scheduler), turn off `ENABLE_INTERNAL_SCHEDULER` and point something at:
-
-```
+```text
 POST /api/cron/compile
 Authorization: Bearer <CRON_SECRET>
 ```
 
-## Feed fetching notes
+An edition contains at most 20 articles by default (configurable from 1–100).
+Selection takes one story per source per round, rotates the starting source,
+respects per-feed caps, and never repeats an article from a previous edition.
+Changing a limit never changes an existing edition.
 
-- ETag / Last-Modified are respected — a feed that hasn't changed returns 304 and costs
-  nothing.
-- Feed HTML content is sanitized server-side at ingestion time (`src/lib/server/sanitize.ts`,
-  via `sanitize-html`) before ever being stored or rendered with `{@html ...}`. Feed content
-  is third-party HTML and shouldn't be trusted by default.
-- Articles that have already appeared in any past edition never appear again — the per-feed
-  article cap applies to the never-yet-shown backlog, not to the feed's raw item count.
-- OPML import/export lives under `/feeds` (import) and `/feeds/export` (export), using a
-  minimal parser/serializer in `src/lib/server/feeds/opml.ts` — round-trips with Feedly,
-  NetNewsWire, Inoreader, and similar.
+Closing an edition does not mark its articles read. The archive keeps everything
+available without completion counts. The reader saves progress and restores its
+position. Feed ingestion respects ETag/Last-Modified, keeps existing GUIDs, and
+sanitizes third-party HTML. OPML import/export lives under `/feeds`.
+
+Gemini dispatches retain manual/automatic generation, model fallback, token counts,
+and archived summaries. Jobs run in the application process, with persisted claims,
+HTMX polling, and retry after interrupted generation. No queue service is needed.
 
 ## Project structure
 
+```text
+quiet_feed/
+  app.py, routes.py      HTTP routes, sessions, CSRF, lifespan and scheduler
+  models.py, db.py       SQLAlchemy mappings to the original SQLite schema
+  migrate.py            Verified Drizzle adoption, backups and Alembic upgrades
+  editions.py           Frozen edition compilation and views
+  feeds.py, content.py  Feed ingestion, sanitization, OPML and dispatch rendering
+  ai.py, security.py    Gemini jobs, password and encryption compatibility
+templates/              Jinja2 pages and HTMX fragments
+static/                 Plain CSS, small browser scripts, vendored libraries/fonts
+migrations/             Alembic revisions
+drizzle/                Immutable original SQL/history required for upgrades
+tests/                  Isolated regression and upgrade tests
+scripts/                Browser/container smoke checks
 ```
-src/lib/server/
-  auth.ts                  Better Auth instance + databaseHooks (auto-provisions
-                            a userSettings row on signup)
-  db/schema.ts              Drizzle schema — Better Auth tables + app tables
-  db/user-settings.ts       Self-healing settings lookup (creates a default row
-                            if one is ever missing, rather than throwing)
-  edition/compiler.ts        The core "freeze into an Edition" logic
-  edition/view.ts            Assembles a frozen edition into the UI's shape
-  feeds/fetcher.ts            RSS/Atom fetching, ETag caching, sanitization
-  feeds/opml.ts                OPML import/export
-  scheduler.ts               In-process compile-when-due loop
 
-src/routes/
-  /                          Today's edition (or the empty/closed states)
-  /article/[id]              Reader, with scroll-progress persistence
-  /feeds                     Subscription management, OPML import/export
-  /settings                  Edition time, timezone, theme, habits mode
-  /archive, /archive/[date]   Past editions, read-only
-  /api/cron/compile           External-cron-friendly compile trigger
-```
+For future schema changes, edit the SQLAlchemy models and create/review an Alembic
+revision (`uv run alembic revision --autogenerate -m "description"`). Do not modify
+files under `drizzle/`, `migrations/legacy/`, or the three compatibility revisions: deployed
+Drizzle checksums depend on their original contents. All production upgrades run
+through `quiet_feed.migrate` so they receive a backup before pending migrations.
+
+CI runs Python checks, browser behavior checks, and an ARM64 container rehearsal
+covering fresh installation and every Drizzle revision. A tagged release runs the
+Python checks before publishing the existing multi-architecture image and `latest`.
+Use `uv version --bump patch` (or `minor`/`major`) to update the project and lockfile,
+commit the change, then create the corresponding `vX.Y.Z` tag when ready to release.
 
 See `DESIGN.md` for the visual design rationale.
-

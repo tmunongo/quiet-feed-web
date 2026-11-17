@@ -1,0 +1,21 @@
+{% from "_macros.html" import csrf %}
+{% set summary = view.summary %}
+{% set full = full|default(false) %}
+<section id="dispatch-summary" class="dispatch{% if full %} dispatch-full{% endif %}"
+  {% if summary and summary.status == 'generating' %}hx-get="/edition/{{ view.edition.id }}/summary{% if full %}?full=1{% endif %}" hx-trigger="every 2.5s" hx-swap="outerHTML"{% endif %}>
+  {% if not full %}<p class="dateline">Executive summary</p><h2>The Morning Dispatch</h2>{% endif %}
+  {% if summary and summary.status == 'completed' %}
+    {% if full %}<article class="article-body" hx-disable x-ignore>{{ summary.content_markdown|dispatch }}</article>
+    {% else %}<div class="dispatch-preview">{{ summary.content_markdown|dispatch }}</div><a class="button primary" href="/dispatch?date={{ view.edition.date }}">Read full dispatch →</a>{% endif %}
+    <p class="dateline dispatch-meta">{{ (summary.prompt_tokens or 0) + (summary.completion_tokens or 0) }} tokens · {{ summary.model }}</p>
+  {% elif summary and summary.status == 'generating' %}<p class="muted" role="status">Preparing your dispatch… You can keep reading while it’s being written.</p>
+  {% else %}
+    {% if summary and summary.error_message %}<p class="error-message" role="alert">{{ summary.error_message }}</p>{% endif %}
+    {% if settings.ai_digest_enabled and settings.gemini_api_key %}<p class="muted">A quiet overview of this edition, with links to the stories.</p>{% else %}<p class="muted">Enable AI daily digests in <a href="/settings">Settings</a> to generate a dispatch.</p>{% endif %}
+  {% endif %}
+  {% if (not summary or summary.status != 'generating') and settings.ai_digest_enabled and settings.gemini_api_key and (full or not summary or summary.status != 'completed') %}
+  <form action="/edition/{{ view.edition.id }}/summary{% if full %}?full=1{% endif %}" method="post" hx-post="/edition/{{ view.edition.id }}/summary{% if full %}?full=1{% endif %}" hx-target="#dispatch-summary" hx-swap="outerHTML" hx-disabled-elt="find button">
+    {{ csrf(csrf_token) }}<button class="button">{{ 'Regenerate dispatch' if summary and summary.status == 'completed' else 'Generate dispatch' }}</button>
+  </form>
+  {% endif %}
+</section>

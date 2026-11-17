@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="{{ settings.theme if settings else 'system' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="htmx-config" content='{"historyCacheSize":0,"selfRequestsOnly":true,"allowEval":false,"allowScriptTags":false}'>
+  <title>{% block title %}Quiet Feed{% endblock %}</title>
+  <link rel="icon" href="/icons/icon-source.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css?v={{ config.version }}">
+  <script src="/static/app.js?v={{ config.version }}" defer></script>
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/vendor/alpine.min.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% if user %}
+  <header class="site-header" x-data="{ open: false }">
+    <div class="nav-inner">
+      <a href="/" class="brand">quiet feed</a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        {% for href, label in [('/', 'Edition'), ('/feeds', 'Feeds'), ('/archive', 'Archive'), ('/settings', 'Settings')] %}
+        <a href="{{ href }}" {% if request.url.path == href %}aria-current="page"{% endif %}>{{ label }}</a>
+        {% endfor %}
+        <form action="/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link-button muted">Sign out</button></form>
+      </nav>
+      <button class="menu-toggle link-button" type="button" @click="open = !open" :aria-expanded="open" aria-controls="mobile-nav" aria-label="Toggle navigation menu">☰</button>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav" x-show="open" x-cloak aria-label="Mobile navigation">
+      {% for href, label in [('/', 'Edition'), ('/feeds', 'Feeds'), ('/archive', 'Archive'), ('/settings', 'Settings')] %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+      <form action="/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link-button muted">Sign out</button></form>
+    </nav>
+    <noscript><nav class="mobile-nav"><a href="/feeds">Feeds</a><a href="/archive">Archive</a><a href="/settings">Settings</a></nav></noscript>
+  </header>
+  {% endif %}
+  <div id="request-error" class="request-error" role="alert" hidden></div>
+  <main id="main">{% block content %}{% endblock %}</main>
+  <footer class="site-footer"><div><span>v{{ config.version }}{% if config.commit %} · #{{ config.commit }}{% endif %}</span><a href="https://github.com/tmunongo/quiet-feed-web" target="_blank" rel="noopener noreferrer">GitHub</a></div></footer>
+</body>
+</html>

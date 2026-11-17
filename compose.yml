@@ -1,5 +1,6 @@
 services:
   quiet-feed:
+    image: ghcr.io/tmunongo/quiet-feed-web:${APP_IMAGE_TAG:-latest}
     build:
       context: .
       args:
@@ -11,16 +12,18 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       # Update these two to your real domain before going live.
-      ORIGIN: https://quiet-feed.example.com
-      BETTER_AUTH_URL: https://quiet-feed.example.com
-      XFF_DEPTH: 1
+      ORIGIN: ${ORIGIN:-https://quiet-feed.example.com}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://quiet-feed.example.com}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       CRON_SECRET: ${CRON_SECRET}
-      ENABLE_INTERNAL_SCHEDULER: "true"
-      SECURE_COOKIES: "true"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      ENABLE_INTERNAL_SCHEDULER: ${ENABLE_INTERNAL_SCHEDULER:-true}
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
       DATABASE_PATH: /app/data/quiet-feed.db
     volumes:
       - quiet-feed-data:/app/data
+    stop_grace_period: 5m
     # Remove this if you're not fronting with Traefik — then publish the
     # port directly instead, e.g. `ports: ["3000:3000"]`.
     labels:

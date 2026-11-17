@@ -1,10 +1,20 @@
-.PHONY: bump-patch bump-minor bump-major
+.PHONY: dev test check bump-patch bump-minor bump-major
+
+dev:
+	uv run python -m quiet_feed
+
+test:
+	uv run pytest
+
+check:
+	uv run ruff check .
+	uv run ruff format --check .
 
 bump-patch:
-	bun ./scripts/bump-version.js patch
+	uv version --bump patch
 
 bump-minor:
-	bun ./scripts/bump-version.js minor
+	uv version --bump minor
 
 bump-major:
-	bun ./scripts/bump-version.js major
+	uv version --bump major

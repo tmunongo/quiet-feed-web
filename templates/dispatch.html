@@ -1,0 +1,6 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% block title %}The Morning Dispatch — Quiet Feed{% endblock %}
+{% block content %}
+<div class="reader"><a class="back-link" href="{{ back_url }}">← Back to edition</a><header class="page-heading"><p class="dateline">Issue №{{ view.edition.issue_number }} · {{ view.edition.date|date_label|upper }}</p><h1>The Morning Dispatch</h1></header>{% set full = true %}{% include "_summary.html" %}</div>
+<a class="floating-back" href="{{ back_url }}">← <span>Back to edition</span></a>
+{% endblock %}

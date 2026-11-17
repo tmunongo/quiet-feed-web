@@ -1,0 +1,53 @@
+{% extends "_partial.html" if partial else "base.html" %}
+{% from "_macros.html" import csrf, seal %}
+{% block title %}{{ 'Archive' if archive else "Today's edition" }} — Quiet Feed{% endblock %}
+{% block content %}
+<div class="page">
+{% if not view %}
+  <div class="empty-state">
+    <p class="dateline">{{ 'No edition yet' if feed_count == 0 else 'Next edition' }}</p>
+    <h1>{{ 'Your first edition arrives' if feed_count == 0 else 'Arriving today' }} at {{ settings.edition_time }}.</h1>
+    {% if feed_count == 0 %}
+    <p class="muted">Add a few feeds and Quiet Feed will quietly compile them into your first edition once the clock strikes your scheduled time.</p>
+    <a href="/feeds" class="button primary">Add your feeds</a>
+    {% else %}
+    <p class="muted">{{ feed_count }} feed{{ 's' if feed_count != 1 }} subscribed. There's nothing to do until your edition is ready.</p>
+    {% if not settings.habits_mode %}<form action="/edition/fetch" method="post">{{ csrf(csrf_token) }}<button class="button">Fetch now instead</button></form>{% endif %}
+    {% endif %}
+  </div>
+{% else %}
+  {% set edition = view.edition %}
+  {% set sealed = not archive and (edition.closed_at or (view.total > 0 and view.read_count == view.total)) %}
+  {% if archive %}<a class="back-link" href="/archive">← Back to archive</a>{% endif %}
+  <header class="page-heading split">
+    <div><p class="dateline">Issue №{{ edition.issue_number }} · {{ edition.date|date_label|upper }}</p>
+      <h1>{{ 'Back issue' if archive else "Today's edition" }}</h1>
+      {% if view.total and not archive %}<p class="muted small">{{ view.total }} articles · Read what interests you.</p>{% endif %}
+    </div>
+    {% if archive or sealed %}{{ seal(edition) }}{% endif %}
+  </header>
+  {% if sealed %}
+  <div class="empty-state">{{ seal(edition, true) }}<h2>That’s enough for today.</h2><p class="muted">Next edition arrives tomorrow at {{ settings.edition_time }}.</p><a href="/archive/{{ edition.date }}">Revisit this edition</a></div>
+  {% elif view.total == 0 %}
+  <div class="empty-state"><p class="dateline">Quiet day</p><p class="muted">None of your feeds published anything new before this edition was sealed. Some days are just quiet.</p></div>
+  {% else %}
+    {% if view.summary or (not archive and settings.ai_digest_enabled) %}{% set full = false %}{% include "_summary.html" %}{% endif %}
+    {% if not archive %}<div class="close-edition"><form action="/edition/{{ edition.id }}/close" method="post">{{ csrf(csrf_token) }}<button class="button small">Close today’s edition</button></form><p class="muted small">You can stop here. All articles stay available in the archive.</p></div>{% endif %}
+    {% for category, stories in view.categories.items() %}
+    <section class="category" {% if not archive %}x-data="categoryState" data-category="{{ category }}" data-collapsed="{{ 'true' if category in collapsed else 'false' }}"{% endif %}>
+      {% if not archive %}
+      <button type="button" class="category-heading" @click="toggle" :aria-expanded="!collapsed"><h2>{{ category }}</h2><span class="dateline">{{ stories|length }} <span x-text="collapsed ? '▾' : '▴'">{{ '▾' if category in collapsed else '▴' }}</span></span></button>
+      {% else %}<h2 class="category-heading">{{ category }}</h2>{% endif %}
+      <ul class="story-list" {% if not archive %}x-show="!collapsed"{% if category in collapsed %} x-cloak{% endif %}{% endif %}>
+        {% for story in stories %}
+        <li><a class="story{% if story.progress.read %} is-read{% endif %}" href="/article/{{ story.progress.id }}">
+          <h3>{{ story.article.title }}</h3><p class="dateline">{{ story.feed.title }}{% if story.article.published_at %} · {{ story.article.published_at|date_label('%b %d') }}{% endif %}{% if not archive and story.progress.scroll_percent and not story.progress.read %} · {{ story.progress.scroll_percent }}% read{% endif %}</p>
+        </a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endfor %}
+  {% endif %}
+{% endif %}
+</div>
+{% endblock %}

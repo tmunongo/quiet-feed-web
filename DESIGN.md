@@ -17,7 +17,7 @@ specific idea than "newspaper," and it suggested a more specific visual language
 ## The signature device: the Seal
 
 Instead of a masthead, Quiet Feed's signature mark is a postmark-style stamp — "the Seal"
-(`src/lib/components/Seal.svelte`) — that appears once an edition is closed
+(`templates/_macros.html`) — that appears once an edition is closed
 for the day, either by choice or after reading every article. It's deliberately not a
 perfect circle (slight rotation, a faint double ring) to read as hand-stamped rather
 than vector-perfect. It's the one place in the UI that's
@@ -35,7 +35,7 @@ the reading-progress bar in airmail-blue) without it reading as "the app's brand
   moments without needing decoration around it. Not Playfair Display, deliberately — that
   pairing (cream + Playfair) is exactly the combination this is trying to avoid.
 - **System sans serif** (body) — article text, summaries, and general interface copy
-  use the platform’s native sans serif through Tailwind’s shared sans stack. This keeps
+  use the platform’s native sans serif through the shared system sans stack. This keeps
   reading text familiar and separates it clearly from the serif headings, without an
   additional font download.
 - **JetBrains Mono** (utility/"dateline") — issue numbers, timestamps, feed names, form
@@ -45,15 +45,15 @@ the reading-progress bar in airmail-blue) without it reading as "the app's brand
 
 ## Palette
 
-Defined as CSS custom properties in `src/app.css` under `@theme`, with a `.dark` variant:
+Defined as CSS custom properties in `static/app.css`, with explicit and system dark themes:
 
 | Token | Light | Role |
 |---|---|---|
-| `--color-paper` | `#E6E3DA` | Background — a cool, grey-leaning archival paper, not cream |
-| `--color-ink` | `#20242C` | Primary text — a soft blue-black, not pure black |
-| `--color-stamp` | `#A8392C` | The Seal, destructive actions, errors — postmark red |
-| `--color-airmail` | `#2A4A6B` | Links, progress indicator, focus states — postal blue |
-| `--color-line` | `#C7C3B6` | Hairline dividers |
+| `--paper` | `#E6E3DA` | Background — a cool, grey-leaning archival paper, not cream |
+| `--ink` | `#20242C` | Primary text — a soft blue-black, not pure black |
+| `--stamp` | `#A8392C` | The Seal, destructive actions, errors — postmark red |
+| `--airmail` | `#2A4A6B` | Links, progress indicator, focus states — postal blue |
+| `--line` | `#C7C3B6` | Hairline dividers |
 
 Dark mode isn't an inverted light mode — it shifts toward a near-black ink background with
 paper-toned text, and the accent colors lighten/desaturate slightly so they hold contrast

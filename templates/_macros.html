@@ -1,0 +1,6 @@
+{% macro csrf(value) %}<input type="hidden" name="csrf_token" value="{{ value }}">{% endmacro %}
+{% macro seal(edition, large=false) %}
+<div class="seal{% if large %} seal-large{% endif %}" aria-label="Sealed edition {{ edition.issue_number }}">
+  <span class="seal-caption">QUIET FEED</span><strong>№{{ edition.issue_number }}</strong><span class="seal-caption">{{ edition.date|date_label|upper }}</span>
+</div>
+{% endmacro %}
