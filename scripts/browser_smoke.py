@@ -37,6 +37,35 @@ class FeedHandler(BaseHTTPRequestHandler):
         pass
 
 
+def assert_typography(page, selector, family, size, line_height):
+    """Keep the original app's type roles and metrics on the rendered elements."""
+    page.evaluate("document.fonts.ready")
+    actual = page.locator(selector).first.evaluate("""el => {
+        const style = getComputedStyle(el);
+        return {family: style.fontFamily, size: style.fontSize,
+                weight: style.fontWeight, lineHeight: style.lineHeight};
+    }""")
+    expected_family = (
+        page.locator("body").evaluate("el => getComputedStyle(el).fontFamily")
+        if family == "body"
+        else family
+    )
+    assert expected_family in actual["family"], (selector, actual)
+    assert (actual["size"], actual["weight"], actual["lineHeight"]) == (size, "400", line_height), (
+        selector,
+        actual,
+    )
+    if family != "body":
+        loaded = page.locator(selector).first.evaluate(
+            """async (el, font) => {
+                const faces = await document.fonts.load(`400 ${font.size} "${font.family}"`, el.textContent);
+                return faces.length > 0 && faces.every(face => face.status === 'loaded');
+            }""",
+            {"size": size, "family": family},
+        )
+        assert loaded, f"{family} did not load for {selector}"
+
+
 def main():
     with tempfile.TemporaryDirectory(prefix="quiet-feed-browser-") as directory:
         path = seed_legacy(Path(directory) / "quiet-feed.db")
@@ -88,6 +117,8 @@ def main():
                     errors = []
                     page.on("pageerror", lambda error: errors.append(str(error)))
                     page.goto(origin + "/login")
+                    assert_typography(page, ".auth-shell h1", "Fraunces Variable", "30px", "36px")
+                    assert_typography(page, "input[name=email]", "body", "16px", "24px")
                     page.get_by_label("Email", exact=True).fill("reader@example.com")
                     page.get_by_label("Password", exact=True).fill(
                         CRYPTO["passwords"][0]["password"]
@@ -97,6 +128,8 @@ def main():
                     expect(
                         page.get_by_role("link", name=re.compile("A long new story"))
                     ).to_be_visible()
+                    assert_typography(page, ".page-heading h1", "Fraunces Variable", "30px", "36px")
+                    assert_typography(page, ".story h3", "Fraunces Variable", "18px", "24.75px")
                     heading = page.get_by_role("button", name=re.compile("^Technology"))
                     heading.click()
                     expect(
@@ -131,8 +164,13 @@ def main():
                         page.get_by_role("link", name=re.compile("A long new story"))
                     ).to_be_visible()
                     page.goto(origin + "/feeds")
+                    assert_typography(page, ".page-heading h1", "Fraunces Variable", "24px", "32px")
+                    assert_typography(page, ".feed-info h3", "body", "16px", "24px")
                     page.get_by_role("button", name="Edit", exact=True).click()
                     page.get_by_label("Title", exact=True).fill("Renamed source")
+                    assert_typography(
+                        page, ".feed-editor input[name=title]", "body", "14px", "20px"
+                    )
                     page.get_by_role("button", name="Save changes").click()
                     expect(page.get_by_role("heading", name="Renamed source")).to_be_visible()
                     assert page.locator("main").count() == 1
@@ -144,6 +182,7 @@ def main():
                     page.get_by_role("button", name="Import OPML").click()
                     expect(page.get_by_text("Imported 0 of 1 feeds.")).to_be_visible()
                     page.goto(origin + "/settings")
+                    assert_typography(page, ".page-heading h1", "Fraunces Variable", "24px", "32px")
                     page.get_by_role("combobox", name=re.compile("^Theme")).select_option("light")
                     page.get_by_label(re.compile("^Articles per edition")).fill("6")
                     page.get_by_role("button", name="Save settings").click()

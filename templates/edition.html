@@ -2,7 +2,7 @@
 {% from "_macros.html" import csrf, seal %}
 {% block title %}{{ 'Archive' if archive else "Today's edition" }} — Quiet Feed{% endblock %}
 {% block content %}
-<div class="page">
+<div class="page{% if not archive %} page-edition{% endif %}">
 {% if not view %}
   <div class="empty-state">
     <p class="dateline">{{ 'No edition yet' if feed_count == 0 else 'Next edition' }}</p>

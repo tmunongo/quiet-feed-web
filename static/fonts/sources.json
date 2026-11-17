@@ -1,0 +1,52 @@
+[
+  {
+    "package": "@fontsource-variable/fraunces",
+    "version": "5.3.0",
+    "source": "https://www.npmjs.com/package/@fontsource-variable/fraunces/v/5.3.0",
+    "files": [
+      {
+        "file": "fraunces-vietnamese-wght-normal.woff2",
+        "sha256": "ce7b18aac7371cde4a740e54e252e9f02de67ff2ed444b18d1d04e66f50edeb0"
+      },
+      {
+        "file": "fraunces-latin-ext-wght-normal.woff2",
+        "sha256": "a21ecfbf41fbc393e24ef9b7e38532a27e8da5e0a074aa7d66802d1b5ccec2f0"
+      },
+      {
+        "file": "fraunces-latin-wght-normal.woff2",
+        "sha256": "7f9d191d999336d3b9790afa72e1358e50a13b06d4f289341e92a311967a80f9"
+      }
+    ]
+  },
+  {
+    "package": "@fontsource/jetbrains-mono",
+    "version": "5.3.0",
+    "source": "https://www.npmjs.com/package/@fontsource/jetbrains-mono/v/5.3.0",
+    "files": [
+      {
+        "file": "jetbrains-mono-cyrillic-ext-400-normal.woff2",
+        "sha256": "5f4292eb92ca542e9f60048ca72832d0183b1a06e5d7bcfeed16f9be9ebb4018"
+      },
+      {
+        "file": "jetbrains-mono-cyrillic-400-normal.woff2",
+        "sha256": "522f5827308102a9c0ea7860b5a11306043610ecf03d150ba32056a06e8c56e2"
+      },
+      {
+        "file": "jetbrains-mono-greek-400-normal.woff2",
+        "sha256": "365b7a8eaff022b13ed0561fde3890a04a30507d773ecd5adb3aca8e766a285c"
+      },
+      {
+        "file": "jetbrains-mono-vietnamese-400-normal.woff2",
+        "sha256": "efc9e0df126ca6dd1c37a022bfe1d664d23b3fcaa32979d2028ecb4c074306c8"
+      },
+      {
+        "file": "jetbrains-mono-latin-ext-400-normal.woff2",
+        "sha256": "505dfba8ecbe77e82765f36d317ed7ef4ac42719dc5f4ae68d1c483fd22d0d14"
+      },
+      {
+        "file": "jetbrains-mono-latin-400-normal.woff2",
+        "sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb"
+      }
+    ]
+  }
+]

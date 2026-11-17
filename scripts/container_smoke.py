@@ -19,6 +19,20 @@ def docker(*args):
     return subprocess.check_output(["docker", *args], text=True).strip()
 
 
+def wait_until_healthy(client, origin, timeout=60):
+    deadline = time.monotonic() + timeout
+    last_error = None
+    while time.monotonic() < deadline:
+        try:
+            with client.open(origin + "/healthz", timeout=2) as response:
+                assert json.load(response)["status"] == "ok"
+            return
+        except OSError as error:
+            last_error = error
+            time.sleep(0.2)
+    raise RuntimeError(f"Container did not become healthy within {timeout} seconds") from last_error
+
+
 def main():
     image = sys.argv[1] if len(sys.argv) > 1 else "quiet-feed:test"
     assert docker("image", "inspect", "--format", "{{.Architecture}}", image) == "arm64"
@@ -64,16 +78,7 @@ def main():
                 client = urllib.request.build_opener(
                     urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
                 )
-                deadline = time.monotonic() + 60
-                while time.monotonic() < deadline:
-                    try:
-                        response = client.open(origin + "/healthz", timeout=2)
-                        assert json.load(response)["status"] == "ok"
-                        break
-                    except OSError:
-                        time.sleep(0.2)
-                else:
-                    raise RuntimeError("Container did not become healthy")
+                wait_until_healthy(client, origin)
                 response = client.open(origin + ("/register" if revision is None else "/login"))
                 response.close()
                 # Read the form token from the HTML so this also verifies template wiring.
@@ -118,15 +123,12 @@ def main():
                 docker("restart", name)
                 port = docker("port", name, "3000/tcp").rsplit(":", 1)[1]
                 origin = f"http://127.0.0.1:{port}"
-                # The same database/session survives recreation and migrations are idempotent.
-                for _ in range(100):
-                    try:
-                        assert client.open(origin + "/feeds", timeout=2).status == 200
-                        break
-                    except OSError:
-                        time.sleep(0.1)
-                else:
-                    raise RuntimeError("Container did not restart")
+                # ARM64 startup under QEMU needs the same readiness budget after a restart.
+                wait_until_healthy(client, origin)
+                # The same database/session survives restart and migrations are idempotent.
+                with client.open(origin + "/feeds", timeout=2) as response:
+                    assert response.status == 200
+                    assert response.geturl() == origin + "/feeds"
                 if revision is not None:
                     assert (
                         docker(

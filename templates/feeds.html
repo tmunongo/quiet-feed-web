@@ -2,7 +2,7 @@
 {% from "_macros.html" import csrf %}
 {% block title %}Feeds — Quiet Feed{% endblock %}
 {% block content %}
-<div class="page">
+<div class="page page-feeds">
   <header class="page-heading"><p class="dateline">Your sources</p><h1>Feeds</h1><p class="muted">A few good sources. One quiet edition.</p></header>
   {% if message %}<p role="status" class="{{ 'error-message' if error else 'notice' }}">{{ message }}</p>{% endif %}
   <section class="settings-section"><h2>Add a feed</h2><form action="/feeds/add" method="post" class="stack" hx-post="/feeds/add" hx-target="#main" hx-swap="outerHTML" hx-disabled-elt="find button">
