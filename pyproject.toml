@@ -1,6 +1,6 @@
 [project]
 name = "quiet-feed"
-version = "0.5.1"
+version = "0.5.2"
 description = "One frozen daily edition of your feeds."
 requires-python = ">=3.12,<3.15"
 dependencies = [
