@@ -21,7 +21,7 @@
       <label>Google Gemini API key<input type="password" name="geminiApiKey" autocomplete="off" placeholder="{{ 'Leave blank to keep your saved key' if settings.gemini_api_key else 'Enter your API key' }}"><span class="field-help">Encrypted on your server. Never sent to your browser after saving.</span></label>
       <div><button class="button small" type="submit" formaction="/settings/test-key" hx-post="/settings/test-key" hx-target="#key-test-result" hx-swap="innerHTML" formnovalidate>Test API key</button><div id="key-test-result" role="status"></div></div>
       {% if settings.gemini_api_key %}<label class="checkbox"><input type="checkbox" name="removeGeminiKey" value="true"><span>Remove saved API key</span></label>{% endif %}
-      <label>Model<select name="aiModel">{% for model in models %}<option value="{{ model }}" {% if model == settings.ai_model %}selected{% endif %}>{{ model }}</option>{% endfor %}</select></label>
+      <label>Model<select name="aiModel">{% for model in models %}<option value="{{ model }}" {% if model == settings.ai_model %}selected{% endif %}>{{ model }}{% if model in paid_models %} (paid API tier){% endif %}</option>{% endfor %}</select></label>
       <label>Generate dispatch<select name="aiDigestTrigger"><option value="manual" {% if settings.ai_digest_trigger == 'manual' %}selected{% endif %}>When I ask</option><option value="auto" {% if settings.ai_digest_trigger == 'auto' %}selected{% endif %}>Automatically with each edition</option></select></label>
     </section>
     <button class="button primary">Save settings</button>

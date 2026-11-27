@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .content import plain_text
 from .models import (
-    MODELS,
+    FALLBACK_MODELS,
     Article,
     Edition,
     EditionArticle,
@@ -38,6 +38,15 @@ def validate_key(key):
         raise ValueError(
             "Could not reach Google to validate the API key. Try again shortly."
         ) from error
+
+
+def generation_config(model):
+    if model.startswith("gemini-4-"):
+        return {"maxOutputTokens": 32768, "thinkingConfig": {"thinkingLevel": "low"}}
+    if model.startswith("gemini-3"):
+        level = "minimal" if model in {"gemini-3.6-flash", "gemini-3.5-flash-lite"} else "low"
+        return {"maxOutputTokens": 8192, "thinkingConfig": {"thinkingLevel": level}}
+    return {"temperature": 0.3, "maxOutputTokens": 8192, "thinkingConfig": {"thinkingBudget": 0}}
 
 
 def generate_digest(key, model, stories, edition):
@@ -71,7 +80,7 @@ Group stories into 3–5 themes, with narrative paragraphs and article links.
 Stories:
 """ + "\n\n---\n\n".join(distilled)
     last_error = "Gemini could not generate a dispatch."
-    candidates = list(dict.fromkeys([model, *MODELS]))
+    candidates = dict.fromkeys([model, *FALLBACK_MODELS])
     with httpx.Client(timeout=60) as client:
         for candidate in candidates:
             try:
@@ -80,15 +89,14 @@ Stories:
                     headers={"x-goog-api-key": key.strip()},
                     json={
                         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                        "generationConfig": {
-                            "temperature": 0.3,
-                            "maxOutputTokens": 8192,
-                            "thinkingConfig": {"thinkingBudget": 0},
-                        },
+                        "generationConfig": generation_config(candidate),
                     },
                 )
                 if response.status_code in {401, 403}:
-                    raise ValueError("Google rejected the saved API key. Check it in Settings.")
+                    raise ValueError(
+                        "Google rejected access. Check the saved API key and confirm its project "
+                        f"has access to {candidate}."
+                    )
                 if not response.is_success:
                     last_error = (
                         f"Gemini request failed (HTTP {response.status_code}, {candidate})."

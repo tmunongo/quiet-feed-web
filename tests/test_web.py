@@ -168,6 +168,25 @@ def test_settings_update_preserves_key_and_collapsed_preferences(config):
             ]
 
 
+@pytest.mark.parametrize(
+    ("model", "paid"),
+    [
+        ("gemini-4-hydrogen", False),
+        ("gemini-4-neon", True),
+        ("gemini-4-carbon", True),
+        ("gemini-4-argon", True),
+    ],
+)
+def test_settings_offer_and_save_gemini_4_models(client, model, paid):
+    register(client)
+    response = client.get("/settings")
+    label = f"{model} (paid API tier)" if paid else model
+    assert f'value="{model}" >{label}</option>' in response.text
+    response = client.post("/settings", data=settings_form(aiModel=model), headers=csrf(client))
+    assert "Settings saved." in response.text
+    assert f'value="{model}" selected>{label}</option>' in response.text
+
+
 def test_feed_forms_opml_roundtrip_and_invalid_import_rollback(client, monkeypatch):
     from quiet_feed import feeds
 

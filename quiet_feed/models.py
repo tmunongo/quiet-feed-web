@@ -6,7 +6,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
 DEFAULT_MODEL = "gemini-3.6-flash"
-MODELS = [DEFAULT_MODEL, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+FALLBACK_MODELS = (DEFAULT_MODEL, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-4-hydrogen")
+PAID_MODELS = ("gemini-4-neon", "gemini-4-carbon", "gemini-4-argon")
+MODELS = (*FALLBACK_MODELS, *PAID_MODELS)
 
 
 def now():

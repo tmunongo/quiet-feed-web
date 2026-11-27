@@ -1,3 +1,4 @@
+import json
 from threading import Event
 
 import httpx
@@ -9,12 +10,22 @@ from quiet_feed import ai, editions
 from quiet_feed.models import EditionSummary, UserSettings
 
 
-def test_digest_fallback_links_and_usage(monkeypatch):
+@pytest.mark.parametrize(
+    ("model", "thinking_config"),
+    [
+        ("missing-model", {"thinkingBudget": 0}),
+        ("gemini-4-hydrogen", {"thinkingLevel": "low"}),
+        ("gemini-4-neon", {"thinkingLevel": "low"}),
+        ("gemini-4-carbon", {"thinkingLevel": "low"}),
+        ("gemini-4-argon", {"thinkingLevel": "low"}),
+    ],
+)
+def test_digest_model_selection_fallback_links_and_usage(monkeypatch, model, thinking_config):
     calls = []
 
     def handle(request):
         calls.append(request)
-        if len(calls) == 1:
+        if request.url.path.endswith("/missing-model:generateContent"):
             return httpx.Response(404, json={"error": {"message": "Model unavailable"}})
         return httpx.Response(
             200,
@@ -36,10 +47,18 @@ def test_digest_fallback_links_and_usage(monkeypatch):
     article = SimpleNamespace(title="Story", excerpt="Lead", content_html="<p>Body</p>")
     feed = SimpleNamespace(title="Source", category="News")
     edition = SimpleNamespace(issue_number=42, date="2025-01-01")
-    result = ai.generate_digest(
-        "synthetic-key", "missing-model", [(progress, article, feed)], edition
-    )
-    assert len(calls) == 2
+    result = ai.generate_digest("synthetic-key", model, [(progress, article, feed)], edition)
+    if model == "missing-model":
+        assert len(calls) == 2
+        assert result["model"] == "gemini-3.6-flash"
+    else:
+        assert len(calls) == 1
+        assert result["model"] == model
+    assert calls[0].url.path.endswith(f"/{model}:generateContent")
+    generation_config = json.loads(calls[0].content)["generationConfig"]
+    assert generation_config["thinkingConfig"] == thinking_config
+    if model.startswith("gemini-4-"):
+        assert "temperature" not in generation_config
     assert b"existing-progress-id" in calls[0].content
     assert calls[0].headers["x-goog-api-key"] == "synthetic-key"
     assert result["prompt"] == 123 and result["completion"] == 45

@@ -23,6 +23,7 @@ from .content import build_opml, parse_opml, sanitize_html
 from .db import get_settings
 from .models import (
     MODELS,
+    PAID_MODELS,
     Account,
     Article,
     Edition,
@@ -460,6 +461,7 @@ def settings_page(request: Request, user=Depends(current_user), message=None, er
         "settings.html",
         settings=settings,
         models=list(dict.fromkeys([*MODELS, settings.ai_model])),
+        paid_models=PAID_MODELS,
         timezones=sorted(available_timezones()),
         masked_key=mask_key(key) if key else None,
         key_error=bool(settings.gemini_api_key and not key),
